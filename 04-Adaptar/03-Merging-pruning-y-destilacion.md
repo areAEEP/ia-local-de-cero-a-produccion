@@ -18,11 +18,13 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Conocer técnicas más allá del fine-tuning: merging, ablación, pruning, destilación y tokenizers.
 > - Entender qué es viable en un Mac M2 con 24 GB y qué conviene hacer en cloud.
 > - Practicar un merge acotado con modelos pequeños o 7B.

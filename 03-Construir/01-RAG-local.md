@@ -17,10 +17,12 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > El pipeline Python y Ollama funcionan igual en los tres sistemas. Solo cambia la activación del entorno y algún comando de terminal; consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Entender por qué RAG es la primera herramienta que debes probar antes de pensar en fine-tuning.
 > - Comprender embeddings, similitud coseno y por qué la recuperación semántica no es una búsqueda por palabras.
 > - Instalar y usar modelos de embeddings locales (`nomic-embed-text`, `bge-m3`, `sentence-transformers`).
@@ -687,7 +689,8 @@ Entregable: repositorio con `rag_pipeline.py`, `eval_retrieval.py`, `docs/` y un
 
 ---
 
-> [!note] Relacionado
+> [!NOTE]
+> **Relacionado**
 > Este módulo asume que dominas la inferencia local ([02-Inferencia](../02-Uso-local/01-Inferencia-con-Ollama-llama.cpp-y-MLX.md)) y la cuantización ([03-Cuantizacion](../02-Uso-local/02-Cuantizacion-y-formatos.md)). Para cambiar estilo o formato del LLM, ver [04-Fine-Tuning](../04-Adaptar/01-Fine-tuning-con-MLX-en-Mac.md). Para evaluar sistemáticamente, [Evaluacion-LLMs-Local](../07-Anexos/A-Evaluacion-local-sin-autoengano.md). El siguiente paso es dar agencia al modelo: [08-Agentes-Locales](02-Agentes-locales-y-MCP.md).
 
 ---

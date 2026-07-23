@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > Tenemos un modelo (Qwen3-0.6B, con o sin adaptador LoRA del [capítulo anterior](../04-Adaptar/02-Fine-tuning-con-PEFT-y-QLoRA.md)) y queremos servirlo como una API gestionada, escalable y observable. Recorremos la **jerarquía de Azure Machine Learning** (workspace → environment → endpoint → deployment); aprendemos a **elegir la SKU de VM** con GPU adecuada; configuramos la **autenticación** sin filtrar secretos; construimos el **contenedor mínimo**, el **scoring script** con `init()` y `run()`, y el **YAML** de endpoint y deployment; desplegamos; y montamos estrategias de release seguras: **blue/green**, **canary** y **autoescalado**.
 
 ## La jerarquía de Azure ML
@@ -51,7 +53,8 @@ flowchart TD
 - **Online Endpoint**: la **dirección estable** (URL HTTPS + configuración de autenticación) que ven los clientes. **No** cambia cuando despliegas una versión nueva.
 - **Deployment**: la **versión concreta** que se ejecuta detrás de un endpoint — un modelo + un *scoring script* + un *environment* + una SKU de VM + un número de instancias. Un endpoint puede tener **varios** deployments y repartir tráfico entre ellos (la base de blue/green y canary).
 
-> [!tip] La distinción que lo cambia todo
+> [!TIP]
+> **La distinción que lo cambia todo**
 > El **endpoint** es la marca de la tienda; el **deployment** es la mercancía del almacén. Cambias la mercancía sin que el cliente note que la dirección cambió. Esa separación es lo que hace posibles los despliegues sin tiempo de inactividad.
 
 ## Elegir la SKU de VM
@@ -66,7 +69,8 @@ La SKU (*Stock Keeping Unit*, el tipo de máquina) determina la GPU disponible, 
 
 La heurística de dimensionado parte de la huella de memoria del modelo. En `bfloat16` cada parámetro ocupa 2 bytes, así que Qwen3-0.6B necesita del orden de **~1,2 GB** solo para pesos, más memoria para activaciones y la *KV cache*. Cabe sobradamente en una **T4** (16 GB), que es la elección coste-eficiente para este modelo.
 
-> [!note] No sobredimensionar
+> [!NOTE]
+> **No sobredimensionar**
 > Una A100 para servir Qwen3-0.6B es desperdicio de presupuesto: el modelo no usa ni el 2 % de su VRAM. La regla es la GPU **más pequeña** en la que el modelo quepa con holgura para *KV cache* y *batch*. Reserva las A100 para modelos grandes o para QLoRA del [capítulo 9](../04-Adaptar/02-Fine-tuning-con-PEFT-y-QLoRA.md).
 
 ## Autenticación: elige el modo correcto
@@ -77,7 +81,8 @@ Hay tres modos, y el orden de preferencia por seguridad es claro:
 2. **Service principal**: una identidad de aplicación con `client_id`/`tenant_id`/secreto, pensada para automatización CI/CD donde no hay un usuario interactivo. Rota el secreto y guárdalo en Key Vault.
 3. **Keys / tokens**: el endpoint expone autenticación por clave (`key`) o por token (`aml_token`). Simple para que los **clientes** llamen a la API, pero las claves son secretos de larga vida; los tokens caducan y son más seguros.
 
-> [!danger] Nunca en el código
+> [!CAUTION]
+> **Nunca en el código**
 > Jamás incrustes claves, secretos de service principal ni *connection strings* en el *scoring script*, el YAML o el repositorio. Usa **managed identity** para el acceso del deployment a recursos y **Key Vault** para cualquier secreto inevitable. Un secreto en Git es un incidente de seguridad, no un descuido.
 
 ```mermaid
@@ -161,7 +166,8 @@ def run(raw_data: str) -> str:
     return json.dumps({"respuesta": texto})
 ```
 
-> [!warning] La carga va en `init()`
+> [!WARNING]
+> **La carga va en `init()`**
 > Cargar el modelo dentro de `run()` es el error de rendimiento más caro posible: añadirías segundos de latencia a **cada** petición. El modelo se carga una vez en `init()` y vive en las variables globales mientras la instancia esté en pie.
 
 ## El YAML de endpoint y deployment
@@ -189,7 +195,8 @@ instance_type: Standard_NC4as_T4_v3     # SKU con GPU T4
 instance_count: 1            # número de instancias (réplicas)
 ```
 
-> [!info] Versionado con `@latest`
+> [!NOTE]
+> **Versionado con `@latest`**
 > La sintaxis `azureml:nombre@latest` referencia la última versión registrada del modelo o environment. En producción es buena práctica **anclar a una versión concreta** (`@7`) para reproducibilidad, en lugar de `@latest`.
 
 ## Desplegar
@@ -240,7 +247,8 @@ az ml online-endpoint update --name qwen3-endpoint \
     --traffic "blue=0 green=100"
 ```
 
-> [!success] Reversión instantánea
+> [!TIP]
+> **Reversión instantánea**
 > La reversión (*rollback*) es un cambio de porcentaje, no un nuevo despliegue. Volver a `blue=100` es inmediato porque blue **nunca se apagó**. Esa es la red de seguridad que justifica mantener dos deployments en paralelo durante la transición. La decisión de promocionar o revertir debe apoyarse en las métricas de [11 - Observabilidad y monitorización](10-Observabilidad-y-monitorizacion.md).
 
 ## Autoescalado
@@ -300,7 +308,8 @@ flowchart TD
 
 Un **endpoint estable** con autenticación por token; uno o dos **deployments** sobre VMs **T4** dimensionadas al tamaño real de Qwen3-0.6B; un **scoring script** que carga el modelo una sola vez en `init()` y responde en `run()`; **managed identity** para acceder a recursos sin secretos; **blue/green y canary** para actualizar sin downtime y revertir al instante; y **autoescalado** entre 1 y 5 instancias. Lo único que falta es **observar** ese sistema en producción: es el tema del [próximo capítulo](10-Observabilidad-y-monitorizacion.md).
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - La jerarquía es **workspace → environment → endpoint → deployment**. El **endpoint** es la dirección estable; el **deployment** es la versión concreta detrás.
 > - Elige la SKU **más pequeña** que albergue el modelo con holgura: una **T4** sobra para Qwen3-0.6B (~1,2 GB de pesos en bf16); reserva las A100 para modelos grandes.
 > - Prefiere **managed identity** para el acceso del deployment a recursos; **nunca** incrustes secretos en código o YAML.

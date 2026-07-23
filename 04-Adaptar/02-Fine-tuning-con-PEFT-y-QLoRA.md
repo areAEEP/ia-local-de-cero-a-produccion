@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Ruta Linux / NVIDIA / cloud
+> [!NOTE]
+> **Ruta Linux / NVIDIA / cloud**
 > Linux nativo es la ruta más directa para estos ejemplos CUDA. En Windows, usa WSL2; en Mac, sigue el itinerario MLX enlazado en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > Llega el momento de **modificar los pesos** del modelo, no solo el contexto que le pasamos. Construimos el árbol de decisión que separa *prompting*, *RAG* y *fine-tuning*; derivamos desde primeros principios las matemáticas de **LoRA** (*Low-Rank Adaptation*); implementamos una capa `LoRALinear` desde cero en PyTorch; entrenamos con la librería **PEFT** (*Parameter-Efficient Fine-Tuning*); reducimos la huella de memoria con **QLoRA**; servimos adaptadores en caliente; restringimos la decodificación para garantizar salida estructurada; y, por último, evaluamos honestamente el resultado. Todo anclado en **Qwen3-0.6B**.
 
 ## El árbol de decisión del fine-tuning
@@ -42,7 +44,8 @@ Antes de tocar un solo peso conviene preguntarse si hace falta. El fine-tuning e
 
 La heurística operativa:
 
-> [!tip] Regla de oro
+> [!TIP]
+> **Regla de oro**
 > El fine-tuning enseña **comportamiento y formato**; RAG aporta **conocimiento factual fresco**. Si el problema es "no sabe X", probablemente quieres RAG. Si es "no responde *como* quiero", quieres fine-tuning.
 
 ```mermaid
@@ -82,7 +85,8 @@ donde $\alpha$ es un factor de escala (*scaling*) y el cociente $\frac{\alpha}{r
 
 El ahorro de parámetros es drástico. Una proyección $1024 \times 1024$ tiene $1024^2 \approx 1{,}05\text{M}$ de parámetros. Con $r = 8$, los adaptadores tienen $2 \cdot 1024 \cdot 8 = 16{,}384$ parámetros: en torno al **1,5 %** del original. Sumando todas las proyecciones objetivo, un adaptador LoRA típico para Qwen3-0.6B entrena del orden de unos pocos millones de parámetros frente a los 600 M de la base.
 
-> [!note] Inicialización
+> [!NOTE]
+> **Inicialización**
 > $A$ se inicializa con ruido gaussiano y $B$ a ceros. Así, al empezar, $\Delta W = BA = 0$ y el modelo parte exactamente del comportamiento de la base: el entrenamiento solo puede mejorar desde ahí.
 
 ## Por qué funciona LoRA (hipótesis de bajo rango intrínseco)
@@ -93,7 +97,8 @@ La intuición: aunque $\Delta W$ *pueda* ser de rango completo, la adaptación q
 
 Formalmente, el rango de una matriz mide cuántas direcciones linealmente independientes contiene. Si la actualización óptima $\Delta W^*$ tiene un rango efectivo bajo (la mayor parte de su "energía", sus valores singulares dominantes, se concentra en pocas direcciones), entonces un producto $BA$ de rango $r$ la aproxima bien. Empíricamente, rangos entre 8 y 64 cubren la mayoría de tareas de adaptación de estilo y formato.
 
-> [!info] Conexión matemática
+> [!NOTE]
+> **Conexión matemática**
 > Esto se relaciona con la **descomposición en valores singulares** (SVD): la mejor aproximación de rango $r$ de cualquier matriz se obtiene quedándose con sus $r$ mayores valores singulares (teorema de Eckart-Young). LoRA *aprende* directamente una aproximación de rango $r$ sin calcular la SVD. Ver [Apéndice A - Fundamentos matemáticos](../07-Anexos/F-Fundamentos-matematicos.md).
 
 ## LoRA desde cero (capa `LoRALinear` en PyTorch)
@@ -195,7 +200,8 @@ trainer.train()
 modelo.save_pretrained("./qwen3-lora-adaptador")   # guarda SOLO el adaptador
 ```
 
-> [!warning] Tasa de aprendizaje
+> [!WARNING]
+> **Tasa de aprendizaje**
 > En LoRA las tasas suelen ser un orden de magnitud mayores que en full fine-tuning ($2\text{e-}4$ frente a $\sim 2\text{e-}5$), porque entrenamos muchos menos parámetros y partimos de $\Delta W = 0$. Empezar demasiado bajo desperdicia presupuesto de cómputo.
 
 Nota crucial: `save_pretrained` sobre un modelo PEFT guarda **solo los adaptadores** (unos pocos MB), no la base. Eso hace que distribuir y versionar adaptadores sea barato.
@@ -226,7 +232,8 @@ modelo = AutoModelForCausalLM.from_pretrained(
 # A partir de aquí: get_peft_model(...) igual que antes
 ```
 
-> [!note] Relación con el capítulo de cuantización
+> [!NOTE]
+> **Relación con el capítulo de cuantización**
 > NF4 y la doble cuantización se tratan en profundidad en [06 - Cuantización y compresión](../05-LLMOps/06-Cuantizacion-y-compresion-avanzada.md). QLoRA es esencialmente "cuantizar la base para entrenar", mientras que allí cuantizábamos "para servir".
 
 Para Qwen3-0.6B QLoRA es casi siempre innecesario (el modelo cabe holgado en cualquier GPU moderna), pero entender el mecanismo es clave porque la misma receta escala a modelos de decenas de miles de millones de parámetros donde sí es la única opción viable en una sola GPU.
@@ -273,7 +280,8 @@ schema = {
 # convierten este schema en una máscara de tokens aplicada paso a paso.
 ```
 
-> [!tip] Fine-tuning + decodificación restringida
+> [!TIP]
+> **Fine-tuning + decodificación restringida**
 > Son complementarios. El fine-tuning enseña al modelo a *querer* producir el formato (mejor calidad del contenido); la decodificación restringida *garantiza* que lo hace (cero fallos de parseo). Para *tool calling* fiable se usan ambos.
 
 ## Evaluar el modelo fine-tuneado
@@ -284,7 +292,8 @@ Entrenar sin evaluar es navegar a ciegas. La evaluación de un fine-tune debe me
 2. **No regresión en capacidades generales**: comprobar que no apareció olvido catastrófico, evaluando en *benchmarks* generales antes y después.
 3. **Comportamiento operativo**: latencia, formato, tasa de rechazos indebidos.
 
-> [!danger] El error más común
+> [!CAUTION]
+> **El error más común**
 > Evaluar solo sobre datos parecidos al entrenamiento da una falsa sensación de éxito. Un adaptador puede "memorizar" el estilo del *training set* y degradar todo lo demás. Siempre incluye un conjunto de control general.
 
 La metodología comparativa correcta:
@@ -301,7 +310,8 @@ flowchart LR
 
 La observabilidad continua en producción cierra el ciclo: detectar *drift* y degradación en vivo es el tema de [11 - Observabilidad y monitorización](../05-LLMOps/10-Observabilidad-y-monitorizacion.md). El proyecto práctico aplica todo esto end-to-end en [P2 - Proyecto - Fine-tuning de Qwen3-0.6B](../06-Proyectos/03-Fine-tuning-de-Qwen3-0.6B.md).
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - El fine-tuning enseña **comportamiento y formato**; para conocimiento factual fresco, prefiere **RAG**. Sigue el árbol de decisión antes de entrenar.
 > - LoRA factoriza la actualización como $\Delta W = \frac{\alpha}{r}BA$ de **rango bajo**, congelando la base y entrenando solo una fracción mínima de parámetros.
 > - Funciona por la **hipótesis del rango intrínseco bajo**: la adaptación a una tarea vive en un subespacio pequeño.

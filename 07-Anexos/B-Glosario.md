@@ -15,7 +15,8 @@ estado: completo
 
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Tener definiciones breves de los conceptos usados en el curso.
 > - Saltar rápido al módulo donde se explica cada tema.
 

@@ -25,11 +25,13 @@ created: 2026-06-30
 
 
 
-> [!info] Ruta NVIDIA / cloud
+> [!NOTE]
+> **Ruta NVIDIA / cloud**
 > Los ejemplos con CUDA están pensados para Windows mediante WSL2, Linux o una GPU cloud. En Mac, usa el itinerario MLX enlazado en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Objetivo del proyecto
+> [!NOTE]
+> **Objetivo del proyecto**
 > Adaptar **Qwen3-0.6B** a un **dominio propio** mediante *fine-tuning* eficiente en parámetros (**PEFT**, *Parameter-Efficient Fine-Tuning*) con **LoRA** y su variante cuantizada **QLoRA**. Recorrerás el ciclo completo: preparar un *dataset* de instrucciones, montar el bucle de entrenamiento con adaptadores, evaluar antes/después y servir el modelo cargando los adaptadores. El entregable es un par de pesos LoRA reutilizables y un informe de mejora cuantificada.
 
 ## Objetivo y resultado esperado
@@ -54,7 +56,8 @@ Solo $A$ y $B$ son entrenables, lo que reduce los parámetros a optimizar en uno
 | `trl` (opcional) | `SFTTrainer` para el bucle SFT |
 | GPU | ≥ 6 GB para LoRA FP16; QLoRA cabe en ≈ 4 GB |
 
-> [!info] LoRA frente a QLoRA
+> [!NOTE]
+> **LoRA frente a QLoRA**
 > **LoRA**: el modelo base se mantiene en FP16 y se entrenan los adaptadores. **QLoRA**: el modelo base se carga **cuantizado a 4 bits** (NF4) y los adaptadores se entrenan en precisión mayor. QLoRA recorta drásticamente la VRAM a cambio de algo de sobrecarga de dequantización. Con un modelo de 0.6B, LoRA basta; QLoRA se incluye para que practiques la técnica que necesitarás con modelos de 7B+.
 
 ## Arquitectura
@@ -95,7 +98,8 @@ def formatear(ejemplo, tokenizer):
     return {"text": texto}
 ```
 
-> [!tip] Enmascarar la pérdida sobre el prompt
+> [!TIP]
+> **Enmascarar la pérdida sobre el prompt**
 > En *fine-tuning* de instrucciones solo queremos que el modelo aprenda a **generar la respuesta**, no a repetir la instrucción. Las *labels* de los tokens del *prompt* se ponen a `-100` (índice ignorado por la *cross-entropy*). `SFTTrainer` con `DataCollatorForCompletionOnlyLM` lo hace por ti; si montas el bucle a mano, hazlo explícitamente.
 
 ### 2. Cargar el modelo base (LoRA o QLoRA)
@@ -172,7 +176,8 @@ trainer.train()
 trainer.save_model("adaptadores_dominio")  # guarda SOLO los adaptadores
 ```
 
-> [!note] Por qué un learning rate alto
+> [!NOTE]
+> **Por qué un learning rate alto**
 > En *full fine-tuning* un LR de $2 \times 10^{-4}$ desestabilizaría el modelo. En LoRA solo ajustamos matrices pequeñas inicializadas para que $\Delta W = 0$ al arrancar, así que toleran —y necesitan— LR más agresivos.
 
 ### 5. Evaluación antes/después
@@ -212,7 +217,8 @@ modelo_fusionado = modelo.merge_and_unload()
 modelo_fusionado.save_pretrained("qwen3_dominio_merged")
 ```
 
-> [!tip] Fusionar es el puente con el Proyecto 3
+> [!TIP]
+> **Fusionar es el puente con el Proyecto 3**
 > Un modelo fusionado se cuantiza y se sirve como uno cualquiera. Esto conecta directamente con [P3 - Proyecto - Sistema de serving en producción](04-Sistema-de-serving-en-produccion.md), donde el modelo fusionado entra en la pipeline de cuantización y despliegue.
 
 ## Criterios de aceptación
@@ -227,16 +233,20 @@ modelo_fusionado.save_pretrained("qwen3_dominio_merged")
 
 ## Errores comunes
 
-> [!warning] Sobreajuste con dataset pequeño
+> [!WARNING]
+> **Sobreajuste con dataset pequeño**
 > Con pocos ejemplos y 3+ épocas el modelo memoriza. Vigila la curva de validación: si la pérdida de *train* baja pero la de *val* sube, has cruzado el punto de sobreajuste (en inglés *overfitting*). Reduce épocas o aumenta `lora_dropout`.
 
-> [!warning] Plantilla de chat inconsistente
+> [!WARNING]
+> **Plantilla de chat inconsistente**
 > Si entrenas con un formato de *prompt* y sirves con otro, el modelo rinde mal en producción. Usa **exactamente** la misma `apply_chat_template` en entrenamiento e inferencia.
 
-> [!warning] No enmascarar el prompt
+> [!WARNING]
+> **No enmascarar el prompt**
 > Si dejas que la pérdida cuente los tokens de la instrucción, el modelo aprende a regurgitar *prompts* en vez de a responder. Confirma que las *labels* del *prompt* valen `-100`.
 
-> [!warning] Olvidar prepare_model_for_kbit_training en QLoRA
+> [!WARNING]
+> **Olvidar prepare_model_for_kbit_training en QLoRA**
 > Sin esta llamada, el entrenamiento 4-bit suele ser inestable (gradientes en capas mal preparadas, *layernorms* sin precisión adecuada).
 
 ## Extensiones opcionales
@@ -246,7 +256,8 @@ modelo_fusionado.save_pretrained("qwen3_dominio_merged")
 3. **DPO** (*Direct Preference Optimization*): añade una fase de alineación con pares de preferencia tras el SFT.
 4. **Barrido de hiperparámetros**: rejilla sobre $r \in \{8, 16, 32\}$ y `lora_alpha` registrando perplejidad para encontrar el frente de Pareto coste/calidad.
 
-> [!success] Qué has aprendido
+> [!TIP]
+> **Qué has aprendido**
 > Sabes adaptar un modelo a un dominio sin reentrenar miles de millones de parámetros: entiendes la corrección de bajo rango de LoRA, la cuantización 4-bit de QLoRA, la importancia de enmascarar el *prompt* y de mantener la plantilla de chat coherente, y cómo medir la mejora con perplejidad y métricas de tarea. Tienes adaptadores listos para fusionar y servir.
 
 ## Enlaces relacionados

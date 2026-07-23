@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > El batching es la palanca individual más potente del servidor de inferencia: convierte un kernel **memory-bound** en uno mucho más eficiente reutilizando los pesos del modelo entre muchas peticiones. Vamos a entender, desde primeros principios, **por qué** el batching gana tan dramáticamente; cómo evolucionamos del batching estático al **continuous batching**; cómo el **chunked prefill** y la **desagregación prefill/decode** protegen la latencia inter-token; y qué políticas de scheduling, admission control y preemption evitan que el servidor colapse por falta de memoria. Cerramos con el tuning operativo de los parámetros que realmente mueven la aguja. Todos los ejemplos se anclan en **Qwen3-0.6B**.
 
 ## Por qué el batching gana de forma tan dramática
@@ -51,7 +53,8 @@ Si $I$ es bajo, dominamos por ancho de banda y la GPU desperdicia su capacidad d
 
 Aquí entra el truco clave: si procesamos **B peticiones a la vez**, leemos los pesos **una sola vez** desde HBM pero los reutilizamos para B activaciones distintas. La lectura de pesos (el coste caro) se **amortiza** entre B tokens.
 
-> [!tip] La intuición de un sólo número
+> [!TIP]
+> **La intuición de un sólo número**
 > Cargar los pesos de Qwen3-0.6B (unos 0,6 mil millones de parámetros, ~1,2 GB en FP16) cuesta lo mismo tanto si generas 1 token como si generas 64 simultáneamente. Con batch=64, el coste por token de mover pesos se divide casi por 64. El cómputo extra (los GEMM crecen) sí aumenta, pero como partíamos de estar memory-bound, hay enorme margen antes de saturar los FLOPs.
 
 La matriz de pesos $W \in \mathbb{R}^{d \times d}$ se multiplica por una activación. Con batch=1 es un **GEMV** (matriz por vector), notoriamente ineficiente en GPU. Con batch=B se convierte en un **GEMM** (matriz por matriz) $X \in \mathbb{R}^{B \times d}$, que las GPU ejecutan a una fracción muchísimo mayor de su pico:
@@ -60,7 +63,8 @@ $$
 Y = X W, \qquad X \in \mathbb{R}^{B \times d}, \; W \in \mathbb{R}^{d \times d}
 $$
 
-> [!warning] El batching no es gratis
+> [!WARNING]
+> **El batching no es gratis**
 > El batching mejora el **throughput** (tokens/segundo agregados) pero puede degradar la **latencia por petición** individual, porque cada token compartido espera a sus compañeros de batch. Todo el resto del capítulo trata, en el fondo, de cómo cosechar el throughput sin destrozar la latencia.
 
 ## Batching estático, dinámico y continuo
@@ -85,7 +89,8 @@ sequenceDiagram
     S->>G: step t+2: [P1, P5, P3, P4]
 ```
 
-> [!info] Por qué el continuous batching es tan superior
+> [!NOTE]
+> **Por qué el continuous batching es tan superior**
 > Elimina el padding y el head-of-line blocking: ninguna secuencia espera a otra para liberar recursos. La GPU se mantiene saturada de trabajo útil. En cargas reales el throughput sube de forma muy notable frente al estático, manteniendo la latencia bajo control.
 
 ## Chunked prefill: cómo protege la inter-token latency
@@ -108,7 +113,8 @@ graph LR
     C -.intercalado con.-> E
 ```
 
-> [!tip] El compromiso del chunked prefill
+> [!TIP]
+> **El compromiso del chunked prefill**
 > Trocear protege la ITL de las peticiones en curso (no se congelan) a costa de aumentar ligeramente el **TTFT** (*time to first token*) de la petición nueva, porque su prefill tarda más en completarse al repartirse. Es exactamente el compromiso que quieres en un servicio interactivo: nadie sufre un parón largo.
 
 ## Prefill y decode desagregados (disaggregated)
@@ -127,7 +133,8 @@ graph LR
     D --> O["Tokens en streaming"]
 ```
 
-> [!info] Ventajas e inconvenientes
+> [!NOTE]
+> **Ventajas e inconvenientes**
 > Ventaja: cada pool se dimensiona y optimiza por separado, y el prefill de uno nunca interfiere con el decode de otro (latencias más predecibles, mejor cumplimiento de SLO). Inconveniente: la **transferencia de la KV cache** introduce coste de red y complejidad operativa; sólo compensa a cierta escala. Para un despliegue de Qwen3-0.6B en una sola GPU casi nunca merece la pena; sí en grandes flotas multi-GPU (ver [08 - De una GPU a inferencia multi-GPU](08-De-una-GPU-a-multi-GPU.md)).
 
 ## Políticas de scheduling
@@ -140,7 +147,8 @@ El scheduler decide, en cada step, **qué peticiones** entran en el batch y en q
 | **Prioridades** | Cada petición tiene una clase (p. ej. interactivo > batch) | Cumple SLO diferenciados | Las de baja prioridad pueden morir de hambre (*starvation*) |
 | **Fairness** | Reparto equitativo de recursos entre usuarios/tenants | Evita que un usuario acapare | Más complejo de implementar y ajustar |
 
-> [!example] FCFS con continuous batching
+> [!TIP]
+> **FCFS con continuous batching**
 > vLLM usa por defecto una política tipo FCFS sobre el continuous batching: las peticiones se admiten por orden de llegada según haya hueco de KV cache. Sencilla, predecible y suficiente para la mayoría de cargas. Las prioridades se añaden encima cuando hay clases de servicio distintas (p. ej. una API de pago frente a trabajos batch nocturnos).
 
 Para evitar la inanición en esquemas de prioridad se usan técnicas como el **aging** (envejecer la prioridad de una petición que lleva mucho esperando) para garantizar que toda petición acabe ejecutándose.
@@ -167,7 +175,8 @@ graph TD
     F --> D
 ```
 
-> [!danger] El colapso de memoria
+> [!CAUTION]
+> **El colapso de memoria**
 > Sin admission control ni preemption, un pico de peticiones largas concurrentes agota la KV cache y el servidor entra en un OOM o en *thrashing* (intercambio constante) que tira el throughput a cero. Estos dos mecanismos son lo que separa un servidor de juguete de uno de producción.
 
 ## Tuning operativo
@@ -182,7 +191,8 @@ Estos son los parámetros que de verdad mueven la aguja (nomenclatura de vLLM, c
 | `block_size` | Tamaño del bloque de paginación de KV cache | Afecta a la fragmentación y la granularidad de asignación |
 | `enable_chunked_prefill` | Activa el troceado de prefill | Protege la ITL de peticiones en curso |
 
-> [!tip] Cómo afinar en la práctica
+> [!TIP]
+> **Cómo afinar en la práctica**
 > 1. Decide tu **objetivo**: ¿optimizas throughput (tokens/s agregados) o latencia (TTFT/ITL por usuario)? No puedes maximizar ambos.
 > 2. Sube `max_num_seqs` hasta que la ITL roce tu SLO; ahí está tu techo de concurrencia.
 > 3. Ajusta `max_num_batched_tokens` para que el chunked prefill no congele los decodes (chunks ni muy grandes ni demasiado pequeños).
@@ -191,7 +201,8 @@ Estos son los parámetros que de verdad mueven la aguja (nomenclatura de vLLM, c
 
 Para Qwen3-0.6B, que es muy ligero, la VRAM da para una concurrencia altísima; el cuello suele ser la KV cache de prompts largos antes que los pesos. Mide TTFT, ITL y throughput juntos (ver [11 - Observabilidad y monitorización](10-Observabilidad-y-monitorizacion.md)) y relaciónalos con el coste por token (ver [12 - Optimización de costes](11-Optimizacion-de-costes.md)).
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - El batching gana porque el decode es **memory-bound**: reutilizar los pesos entre B peticiones amortiza la lectura de HBM y convierte un GEMV ineficiente en un GEMM eficiente.
 > - El **continuous batching** programa por iteración, eliminando padding y head-of-line blocking; es el estándar de producción.
 > - El **chunked prefill** trocea el prefill para no congelar los decodes en curso: protege la ITL a costa de algo de TTFT.

@@ -17,7 +17,8 @@ estado: completo
 
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Entender qué hay dentro de un LLM moderno.
 > - Relacionar parámetros, contexto, KV cache y memoria.
 > - Diferenciar formatos de pesos: safetensors, GGUF y MLX.

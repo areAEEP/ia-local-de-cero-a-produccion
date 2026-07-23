@@ -26,11 +26,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > Cuando un modelo (o su carga de trabajo) deja de caber en una sola GPU, hay que **repartirlo**. Pero "repartir" no es una sola cosa: existen **cinco ejes de paralelismo** ortogonales, cada uno con su patrón de comunicación y su coste. Recorreremos los cinco, profundizaremos en *data*, *tensor* y *pipeline parallelism*, trabajaremos a mano cómo se parte un bloque transformer en column/row parallel, mediremos el coste de los *all-reduces*, veremos la **burbuja** del pipeline y la tolerancia a fallos por réplicas, y cerraremos con decisiones de dimensionado concretas para [Qwen3-0.6B](02-Modelo-de-referencia-Qwen3-0.6B.md) y su familia.
 
 ## Los cinco ejes de paralelismo
@@ -54,14 +56,16 @@ graph TD
 | **Context (CP)** | La dimensión de secuencia (tokens) | *All-gather*/*reduce* de atención | Contextos larguísimos (decenas-cientos de miles de tokens) |
 | **Expert (EP)** | Los expertos de un modelo MoE | *All-to-all* del enrutado | Modelos *Mixture-of-Experts* |
 
-> [!info] Ortogonalidad
+> [!NOTE]
+> **Ortogonalidad**
 > Estos ejes se **multiplican**, no se suman. Un despliegue puede ser, p. ej., TP=2 × PP=4 × DP=8 = 64 GPUs. La elección óptima depende de la **topología de interconexión** (NVLink intra-nodo vs. red entre nodos) tanto como del modelo.
 
 ## Data parallelism: el caso simple
 
 El **paralelismo de datos** (*data parallelism*, DP) es el más fácil: se carga una **copia completa** del modelo en cada GPU y se reparten **peticiones distintas** entre ellas. No hay comunicación entre GPUs durante el cálculo (en inferencia), solo un balanceador delante.
 
-> [!tip] DP en inferencia ≠ DP en entrenamiento
+> [!TIP]
+> **DP en inferencia ≠ DP en entrenamiento**
 > En **entrenamiento**, DP exige un *all-reduce* de gradientes en cada paso para mantener las réplicas sincronizadas. En **inferencia** no hay gradientes: cada réplica atiende peticiones independientes, así que DP en *serving* es **escalado horizontal puro**, sin comunicación. Es el patrón que usaremos para Qwen3-0.6B.
 
 Condición de uso: **el modelo debe caber en una sola GPU**. Si cabe, DP es casi siempre lo primero que se hace, porque escala el *throughput* de forma lineal y trivial.
@@ -112,7 +116,8 @@ def mlp_tensor_paralelo(x, W1_local, W2_local, all_reduce):
     return y
 ```
 
-> [!note] Dos all-reduces por capa transformer
+> [!NOTE]
+> **Dos all-reduces por capa transformer**
 > Sumando atención + MLP, un bloque transformer tensor-paralelo requiere **dos *all-reduces* por capa** en el *forward*. Para un modelo de $L$ capas, son $2L$ *all-reduces* por *forward*. Esta frecuencia altísima es la razón por la que **TP solo es viable con interconexión muy rápida** (NVLink intra-nodo), no entre nodos por red estándar.
 
 ## El coste de los all-reduces
@@ -131,7 +136,8 @@ $$
 
 donde $\beta$ es la latencia por salto y $\text{BW}$ el ancho de banda del enlace.
 
-> [!warning] Por qué TP no cruza nodos a la ligera
+> [!WARNING]
+> **Por qué TP no cruza nodos a la ligera**
 > Con $2L$ *all-reduces* por *forward*, y en **decode** cada *forward* genera **un solo token**, el *all-reduce* se ejecuta **una vez por token por capa**. Si esa comunicación va por red entre nodos (latencia de microsegundos altos) en lugar de NVLink (sub-microsegundo, cientos de GB/s), el tiempo de red **domina** y el TP deja de compensar. Regla práctica: **TP dentro del nodo, PP/DP entre nodos.**
 
 ## Pipeline parallelism: microbatches y burbuja
@@ -156,7 +162,8 @@ $$
 \text{burbuja} = \frac{S - 1}{m + S - 1}
 $$
 
-> [!example] Reducir la burbuja con microbatches
+> [!TIP]
+> **Reducir la burbuja con microbatches**
 > Con $S = 4$ etapas:
 > - $m = 1$: burbuja $= 3/4 = 75\%$ de tiempo ocioso. Inaceptable.
 > - $m = 8$: burbuja $= 3/11 \approx 27\%$.
@@ -164,14 +171,16 @@ $$
 >
 > Más microbatches → menos burbuja, pero más latencia por petición y más presión sobre activaciones/KV cache. Hay que equilibrar.
 
-> [!info] PP en inferencia generativa
+> [!NOTE]
+> **PP en inferencia generativa**
 > En *decode* autorregresivo, los microbatches naturales son **distintas secuencias** del lote. PP da buen *throughput* agregado pero **no reduce la latencia** de una sola secuencia (esta debe atravesar todas las etapas en serie). Para latencia mínima de una petición, TP es mejor; para *throughput* con muchas peticiones y red lenta, PP.
 
 ## Escalado de réplicas y tolerancia a fallos
 
 Por encima del paralelismo intra-modelo está el **escalado de réplicas**: $R$ copias del despliegue (cada una posiblemente ya TP/PP por dentro) detrás de un **balanceador de carga**. Esto es DP a nivel de servicio y es donde vive la **tolerancia a fallos**.
 
-> [!tip] Patrones de robustez
+> [!TIP]
+> **Patrones de robustez**
 > - **Health checks** y *readiness probes*: una réplica que no responde se saca del balanceo.
 > - **Redundancia N+1**: dimensionar para que la caída de una réplica no sature al resto.
 > - **Aislamiento de fallos**: en TP, **si una GPU del grupo cae, cae todo el grupo** (el modelo está partido entre ellas). Por eso conviene que el **dominio de fallo** sea la réplica completa, no la GPU individual.
@@ -191,7 +200,8 @@ graph TD
 
 Aterricemos en cifras conocidas. [Qwen3-0.6B](02-Modelo-de-referencia-Qwen3-0.6B.md) tiene ~0,6 mil millones de parámetros: en BF16 ocupa $\sim 0{,}6\cdot10^9 \cdot 2 \approx 1{,}2$ GB de pesos. **Cabe holgadamente** en cualquier GPU moderna (incluso de 8-12 GB con margen para KV cache y activaciones).
 
-> [!check] Recomendación para Qwen3-0.6B
+> [!TIP]
+> **Recomendación para Qwen3-0.6B**
 > - **No usar TP ni PP.** El modelo cabe de sobra en una GPU; partirlo solo añadiría coste de comunicación sin beneficio.
 > - **Usar data parallelism / réplicas**: lanzar $R$ instancias detrás de un balanceador y escalar horizontalmente según la demanda. Escalado lineal y sin comunicación.
 > - El recurso a vigilar es el **KV cache** (ver [03 - Atención y KV cache](03-Atencion-y-KV-cache.md)), no los pesos: define cuántas peticiones concurrentes caben por GPU.
@@ -205,10 +215,12 @@ El cuadro cambia al subir en la **familia Qwen3**:
 | Qwen3-32B (aprox.) | ~64 GB | No en una GPU de 40 GB | TP=2 intra-nodo |
 | Qwen3 MoE (grande) | depende del nº de expertos | No | TP + EP intra-nodo, PP entre nodos |
 
-> [!warning] No paralelizar por reflejo
+> [!WARNING]
+> **No paralelizar por reflejo**
 > El paralelismo intra-modelo (TP/PP) **siempre añade comunicación y complejidad**. Solo se justifica cuando el modelo **no cabe** o cuando la **latencia objetivo** exige repartir el cómputo de un *forward*. Para modelos pequeños como Qwen3-0.6B, la respuesta correcta casi siempre es **más réplicas, no más particiones**.
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - Hay **cinco ejes ortogonales** de paralelismo: **data, tensor, pipeline, context y expert**; se multiplican entre sí.
 > - **Data parallelism** en inferencia es escalado horizontal puro **sin comunicación**: la primera opción si el modelo cabe.
 > - **Tensor parallelism** parte cada matriz (**column→row parallel**) y cuesta **dos *all-reduces* por capa**: solo viable con **NVLink intra-nodo**.

@@ -26,11 +26,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > - Repasar la **atención escalada por producto punto** (*scaled dot-product attention*) lo justo para entender qué se cachea.
 > - Entender **por qué** se puede cachear: la causalidad de la atención hace que las claves (*keys*) y valores (*values*) de los tokens previos no cambien.
 > - Derivar la **fórmula de coste de memoria** de la KV cache y calcular los números reales para Qwen3-0.6B.
@@ -54,7 +56,8 @@ El término $\sqrt{d_k}$ (con $d_k$ = `head_dim`, en Qwen3-0.6B vale **128**) es
 
 En un LLM autorregresivo la atención es **causal**: un token de la posición $i$ solo puede atender a las posiciones $\le i$. Esto se implementa con una máscara triangular que pone $-\infty$ en las posiciones futuras antes del *softmax*.
 
-> [!info] GQA en Qwen3-0.6B
+> [!NOTE]
+> **GQA en Qwen3-0.6B**
 > Qwen3-0.6B no usa atención multi-cabeza pura, sino **GQA** (*Grouped-Query Attention*): tiene **16 cabezas de query** pero solo **8 cabezas de KV**. Cada par de cabezas de query comparte una misma cabeza K/V. Esto es decisivo para la KV cache: lo que se cachea no son las 16 cabezas, sino las **8 cabezas de KV**. GQA es, en esencia, una técnica de compresión de la KV cache aplicada en tiempo de diseño del modelo.
 
 ```mermaid
@@ -84,7 +87,8 @@ Lo que sí cambia en cada paso es la **query** del token nuevo. En el paso $t$ s
 
 Esto transforma el coste por token de $O(t^2)$ (recalcular toda la matriz de atención) a $O(t)$ (una query contra $t$ claves). Sin KV cache, generar 1000 tokens sería cuadráticamente más caro y los tiempos de respuesta serían inaceptables.
 
-> [!tip] La intuición en una frase
+> [!TIP]
+> **La intuición en una frase**
 > La KV cache convierte un problema "recalcula todo el pasado en cada paso" en un problema "el pasado ya está hecho, solo añade el presente". Es memoización pura aplicada a la causalidad.
 
 ## Coste de memoria de la KV cache: la fórmula y los números
@@ -126,7 +130,8 @@ $$
 114\,688 \cdot 32\,768 = 3\,758\,096\,384 \text{ bytes} \approx 3{,}5 \text{ GiB}
 $$
 
-> [!warning] La cache puede superar al propio modelo
+> [!WARNING]
+> **La cache puede superar al propio modelo**
 > Qwen3-0.6B pesa aproximadamente **1,2 GiB** en BF16. Sin embargo, la KV cache de **una sola** secuencia a contexto completo (≈3,5 GiB) es **casi tres veces** mayor que los pesos. Si servimos un *batch* de varias secuencias largas, la KV cache domina por completo el presupuesto de memoria de la GPU. Por eso toda la ingeniería de *serving* gira en torno a gestionar la KV cache de forma eficiente.
 
 La fórmula también explica las palancas de optimización: reducir `kv_heads` (GQA/MQA), reducir `precisión` (cuantizar la cache a FP8 o INT8) o reducir `seq_len` efectiva (truncado, *sliding window*). Profundizaremos en [06 - Cuantización y compresión](06-Cuantizacion-y-compresion-avanzada.md).
@@ -154,7 +159,8 @@ En sistemas reales la fragmentación de la KV cache podía desperdiciar **un 60-
 
 **PagedAttention** (introducida por vLLM) aplica a la KV cache la misma idea que la **memoria virtual paginada** de un sistema operativo.
 
-> [!example] La analogía con el sistema operativo
+> [!TIP]
+> **La analogía con el sistema operativo**
 > Un SO no entrega a un proceso un bloque físico contiguo de RAM. Le entrega un **espacio de direcciones virtual** continuo que se mapea, mediante una **tabla de páginas**, a **páginas físicas** (típicamente de 4 KiB) dispersas por la RAM. El proceso "cree" que su memoria es contigua; físicamente está fragmentada, pero eso no importa porque la tabla de páginas traduce.
 
 PagedAttention hace exactamente esto:
@@ -201,7 +207,8 @@ Con prefix caching, el motor:
 2. Mantiene un índice de "hash de bloque → bloque físico ya calculado".
 3. Cuando llega una petición nueva cuyos primeros bloques coinciden, **reutiliza** los bloques físicos en lugar de recalcular el *prefill*.
 
-> [!tip] El ahorro es enorme
+> [!TIP]
+> **El ahorro es enorme**
 > Si tu *system prompt* tiene 2000 tokens y atiendes 1000 peticiones, sin prefix caching haces el *prefill* de esos 2000 tokens **1000 veces**. Con prefix caching lo haces **una** vez y las otras 999 peticiones empiezan a generar casi de inmediato. Esto reduce la latencia de primer token (*TTFB*) y el consumo de cómputo de *prefill* drásticamente. Más sobre estas métricas en [11 - Observabilidad y monitorización](10-Observabilidad-y-monitorizacion.md).
 
 El requisito es que el prefijo sea **idéntico byte a byte** (mismos tokens, mismas posiciones). Por eso conviene poner las partes estables del prompt al principio y las variables al final.
@@ -225,7 +232,8 @@ La atención ingenua materializa la matriz $S = QK^{\top}$ completa en HBM. Esa 
 - **Softmax online (running softmax)**: para hacer el *softmax* por bloques sin verlo entero, mantiene de forma incremental el máximo y la suma de exponenciales, reescalando los resultados parciales. Esto da el resultado **exacto** del *softmax*, no una aproximación.
 - **Kernel fusionado (kernel fusion)**: todas las operaciones (producto punto, máscara, *softmax*, multiplicación por $V$) se realizan en **un único kernel** de GPU, evitando viajes de ida y vuelta a HBM entre pasos.
 
-> [!info] Exacto, no aproximado
+> [!NOTE]
+> **Exacto, no aproximado**
 > FlashAttention no cambia el resultado matemático: produce **exactamente** la misma salida que la atención estándar. Solo cambia el *orden* de las operaciones para minimizar el tráfico HBM↔SRAM. Por eso es seguro usarla por defecto. El resultado: menos memoria (no se almacena $S$, que es $O(n^2)$) y más velocidad (menos E/S).
 
 PagedAttention y FlashAttention son **complementarias**: la primera gestiona el almacenamiento de la cache, la segunda acelera el cálculo que la consume.
@@ -320,10 +328,12 @@ class GestorKVCache:
         del self.longitudes[id_seq]
 ```
 
-> [!warning] Qué falta para producción
+> [!WARNING]
+> **Qué falta para producción**
 > Este gestor omite: muestreo de varias secuencias compartiendo prefijo (*copy-on-write* y *prefix caching* vía hashing de bloques), *eviction*/*preemption* cuando se agota el pool, escritura coalescente, y por supuesto la integración con un kernel tipo FlashAttention que lea los bloques físicos sin la copia de `leer_kv`. Sirve para entender el modelo mental, no para servir tráfico real.
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - La KV cache evita recalcular $K$ y $V$ del pasado porque la **atención causal** los hace inmutables; reduce el coste por token de $O(t^2)$ a $O(t)$.
 > - El coste de memoria es $2 \cdot \text{capas} \cdot \text{kv\_heads} \cdot \text{head\_dim} \cdot \text{seq\_len} \cdot \text{precisión}$. Para **Qwen3-0.6B** son ≈**112 KiB/token** y ≈**3,5 GiB** a contexto de 32k, **mayor que los propios pesos**.
 > - **GQA** (8 kv_heads frente a 16 query_heads) ya es una compresión de la cache integrada en el modelo.

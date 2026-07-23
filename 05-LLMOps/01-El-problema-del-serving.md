@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > - Entenderás por qué un `model.generate()` que funciona en tu portátil **no** es un servicio de producción, y dónde está exactamente el hueco.
 > - Aprenderás a razonar sobre las **restricciones simultáneas** de producción (latencia, throughput, memoria, coste, calidad) como un problema de optimización con tensiones internas.
 > - Conocerás las **cinco capas de LLMOps** y por qué cada una introduce sus propios modos de fallo.
@@ -60,7 +62,8 @@ print(tok.decode(out[0], skip_special_tokens=True))
 
 Este código **funciona**, y precisamente por eso es peligroso. Funciona para *una* petición, de *un* usuario, sin límite de tiempo, sin presión de memoria y sin nadie observando si la respuesta es correcta. El hueco entre este snippet y un `vllm serve` real no es de "rendimiento" en abstracto, sino de **todo lo que el snippet asume que no existe**: no hay varios usuarios compitiendo por la GPU, no hay reutilización de cómputo entre pasos (cada `forward` recalcula la atención sobre todo el historial), no hay control de la latencia del primer token, no hay límites de cola, no hay métricas, no hay tolerancia a fallos.
 
-> [!warning] El error mental más común
+> [!WARNING]
+> **El error mental más común**
 > Creer que "el modelo ya funciona, solo falta envolverlo en una API". El servidor de inferencia **no** es un wrapper fino sobre `generate()`. Es un sistema que reorganiza el cómputo (continuous batching, KV cache, paginación de memoria, planificación) para que la misma GPU sirva a decenas o cientos de peticiones concurrentes con garantías de latencia. Es un cambio de arquitectura, no de empaquetado.
 
 El primer síntoma aparece en cuanto llegan dos peticiones a la vez. El bucle naíf las atiende **en serie**: la segunda espera a que termine la primera. Con generaciones de varios segundos, la cola crece sin límite y la latencia percibida se dispara. El segundo síntoma es la memoria: cada petición mantiene su propia KV cache, y sin gestión explícita la GPU se fragmenta o se queda sin VRAM. El tercero es la observabilidad: cuando algo va mal en producción, el snippet no te dice nada — no hay trazas, ni percentiles de latencia, ni tasa de errores.
@@ -83,7 +86,8 @@ $$
 
 **Throughput** es el caudal agregado del sistema, medido en tokens/segundo o peticiones/segundo. Aquí aparece la primera tensión fundamental: para maximizar throughput conviene **agrupar** muchas peticiones en un mismo *batch* y saturar la GPU, pero agrupar añade espera y empeora la latencia individual. Es el clásico *trade-off* latencia–throughput.
 
-> [!info] Compute-bound vs memory-bound
+> [!NOTE]
+> **Compute-bound vs memory-bound**
 > El prefill es típicamente **compute-bound**: procesa muchos tokens en paralelo y satura las unidades de cómputo (FLOPs). El decode es típicamente **memory-bound**: genera un solo token por paso, así que el cuello de botella es leer los pesos del modelo y la KV cache desde la memoria HBM, no multiplicar matrices. Por eso el *batching* ayuda muchísimo más al decode que al prefill: amortiza la lectura de pesos entre muchas peticiones.
 
 **Memoria** es la restricción dura que limita cuántas peticiones caben a la vez. El presupuesto de VRAM se reparte entre pesos del modelo, KV cache (que crece linealmente con el número de tokens en vuelo) y activaciones temporales. La KV cache es el recurso escaso: es lo que hace que un servidor "se llene" aunque sobre cómputo.
@@ -131,7 +135,8 @@ La **capa de observabilidad** instrumenta todo lo anterior. Sin percentiles (p50
 
 La **capa de integración con la aplicación** es donde el modelo se encuentra con el producto: el contrato de la API, la lógica de RAG, los agentes, la *prompt engineering* y el postprocesado. Muchos problemas que parecen "del modelo" son en realidad de esta capa (un prompt mal formado, un parser frágil).
 
-> [!tip] Diagnóstico por capas
+> [!TIP]
+> **Diagnóstico por capas**
 > Cuando algo falla, pregúntate primero **en qué capa estás**. "Va lento" puede ser compute (GPU saturada), runtime (batch mal configurado), observabilidad (no lo sabes en realidad) o aplicación (un retry loop oculto). Localizar la capa reduce el espacio de búsqueda drásticamente.
 
 ## Por qué "local" no es "producción"
@@ -148,12 +153,14 @@ La diferencia entre tu portátil y producción no es de grado, es de **naturalez
 | Coste | tu electricidad | $/1M tokens auditado |
 | Versionado | el último checkpoint | rollout/rollback controlado |
 
-> [!example] El experimento mental del segundo usuario
+> [!TIP]
+> **El experimento mental del segundo usuario**
 > Toma el snippet del primer apartado y lanza dos peticiones a la vez. El bucle naíf las sirve en serie: con generaciones de 4 segundos, el segundo usuario espera 8. Añade un tercero y un cuarto y la cola explota. El servidor de producción, en cambio, **fusiona** sus pasos de decode en un único batch sobre la GPU: los cuatro avanzan casi a la vez. Ese reordenamiento del cómputo —no más hardware— es lo que separa lo local de lo productivo, y es el tema de los capítulos siguientes.
 
 El otro factor es la **demanda no estacionaria**. El tráfico real llega a ráfagas, con picos que multiplican por diez la media. Un sistema dimensionado para la media colapsa en el pico; uno dimensionado para el pico desperdicia dinero el resto del tiempo. Gestionar esa tensión (autoescalado, colas con límites, *load shedding*) es ingeniería de sistemas pura, no *machine learning*. Y es exactamente lo que el resto del curso te enseñará a construir, capa por capa, anclándolo siempre en números concretos sobre Qwen3-0.6B.
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - La inferencia de LLM es **autorregresiva**: $N$ tokens de salida implican $N$ *forward passes* secuenciales, y de ahí nacen casi todas las dificultades.
 > - `model.generate()` funciona para una petición sin restricciones; producción significa **concurrencia, SLA, memoria limitada, coste y calidad simultáneos**.
 > - Las restricciones reales (TTFT, ITL, throughput, memoria, coste, calidad) están en **tensión**: optimizar una suele empeorar otra.

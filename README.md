@@ -21,7 +21,8 @@ El curso empieza sin dar por hecho que sabes de modelos, terminal o GPUs, y term
 
 Puedes seguirlo con **Linux, Windows o macOS**, tanto en un ordenador personal como en un servidor Linux. La mayor parte del curso usa Python, Ollama, llama.cpp y APIs HTTP, por lo que en Linux solo cambian unos pocos comandos de instalación y monitorización. Con 8 GB puedes hacer las primeras prácticas usando modelos pequeños; con 16-32 GB tendrás más margen; con una GPU NVIDIA, AMD compatible o un Mac con bastante memoria unificada podrás abordar los laboratorios avanzados.
 
-> [!important] Empieza aquí
+> [!IMPORTANT]
+> **Empieza aquí**
 > Lee [Bienvenida y método](00-Introduccion/00-Bienvenida-y-metodo.md), elige tu ruta en [Hardware y modelos](00-Introduccion/01-Elige-hardware-y-modelo.md) y prepara el equipo con [Instalación en Linux, Windows y macOS](00-Introduccion/02-Instalacion-Windows-y-macOS.md).
 
 ## Qué vas a conseguir

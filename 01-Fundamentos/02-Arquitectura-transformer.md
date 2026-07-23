@@ -16,7 +16,8 @@ estado: completo
 
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Entender la arquitectura transformer sin perderse en álgebra.
 > - Relacionar tokenizer, embeddings, atención, MLP y logits.
 > - Conectar esta intuición con [01-Fundamentos](01-Que-es-un-LLM.md), [02-Inferencia](../02-Uso-local/01-Inferencia-con-Ollama-llama.cpp-y-MLX.md) y [03-Cuantizacion](../02-Uso-local/02-Cuantizacion-y-formatos.md).

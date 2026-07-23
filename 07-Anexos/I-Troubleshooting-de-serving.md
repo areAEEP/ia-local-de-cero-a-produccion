@@ -23,11 +23,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Resumen
+> [!NOTE]
+> **Resumen**
 > Guía de diagnóstico orientada a **síntomas**. Para cada síntoma observable en un sistema de serving de LLMs damos la **causa probable**, cómo **diagnosticarlo** (con comandos y métricas concretas) y la **solución**. Úsala junto con el runbook y la [Apéndice C - Checklist de producción](H-Checklist-de-produccion.md) durante un incidente. Anclado en el serving de Qwen3-0.6B.
 
 ---
@@ -50,7 +52,8 @@ created: 2026-06-30
 ## Detalle por síntoma
 
 ### TTFT alto
-> [!bug] Diagnóstico
+> [!CAUTION]
+> **Diagnóstico**
 > El TTFT mide cuánto tarda en llegar el **primer** token; lo domina el *prefill* (procesar el prompt completo) más el tiempo en cola. Si el TTFT escala con el tamaño del prompt, es prefill; si escala con la carga del sistema, es cola.
 
 ```bash
@@ -63,7 +66,8 @@ curl -s localhost:8000/metrics | grep -E "time_to_first_token|num_requests_waiti
 **Solución:** el *chunked prefill* trocea prompts largos para que no acaparen una iteración entera, permitiendo intercalar decode de otras secuencias y reducir el TTFT de la cola (ver [05 - Batching y scheduling](../05-LLMOps/05-Batching-y-scheduling.md)).
 
 ### Baja utilización de GPU
-> [!bug] Diagnóstico
+> [!CAUTION]
+> **Diagnóstico**
 > Si la columna `sm` de `nvidia-smi dmon` está baja mientras hay peticiones en cola, la GPU está hambrienta. El sospechoso habitual es la CPU (tokenización, *detokenization*, sampling en Python) o un batch demasiado pequeño.
 
 ```bash
@@ -75,7 +79,8 @@ py-spy top --pid "$PID_OBJETIVO"  # ¿se va el tiempo en CPU/Python?
 **Solución:** activar continuous batching y subir `max_num_seqs`; sacar la tokenización del camino crítico.
 
 ### OOM de KV cache
-> [!bug] Diagnóstico
+> [!CAUTION]
+> **Diagnóstico**
 > Ocurre en mitad de la generación, no al cargar. La ocupación de KV llega al 100 % y nuevas secuencias (o tokens de las existentes) no caben.
 
 Aplica la fórmula $M_{\text{KV}} = 2\,L\,H_{kv}\,d_k\,S\,B\,b$ para saber cuántas secuencias concurrentes de longitud $S$ caben en tu presupuesto de memoria.
@@ -83,7 +88,8 @@ Aplica la fórmula $M_{\text{KV}} = 2\,L\,H_{kv}\,d_k\,S\,B\,b$ para saber cuán
 **Solución:** reducir `max_num_seqs` o `max_model_len`, activar swapping/recompute, o aprovechar GQA y cuantización del KV para reducir $b$.
 
 ### OOM al cargar el modelo
-> [!bug] Diagnóstico
+> [!CAUTION]
+> **Diagnóstico**
 > Falla **antes** de pasar a `ready`. Distinto del OOM de KV: aquí ni siquiera caben pesos + buffer mínimo.
 
 ```bash
@@ -95,13 +101,15 @@ nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv
 **Solución:** cuantizar pesos, ajustar la fracción reservada para KV, o usar una GPU con más VRAM.
 
 ### Latencia inter-token alta (TPOT)
-> [!bug] Diagnóstico
+> [!CAUTION]
+> **Diagnóstico**
 > El TPOT (time-per-output-token) mide la cadencia de generación tras el primer token. Es memory-bound: lo limita el ancho de banda al leer los pesos cada paso (ver el modelo de throughput de [Apéndice A - Fundamentos matemáticos](F-Fundamentos-matematicos.md)).
 
 **Solución:** encontrar el tamaño de batch en el punto dulce (suficiente para amortizar lecturas sin saturar el ancho de banda), reducir bytes por parámetro con bf16/cuantización, y evaluar *speculative decoding*.
 
 ### Fragmentación
-> [!bug] Diagnóstico
+> [!CAUTION]
+> **Diagnóstico**
 > Síntoma desconcertante: `nvidia-smi` reporta memoria libre pero la asignación falla, o caben menos secuencias de las que la fórmula predice. Causa: asignación contigua y reservas por el máximo.
 
 **Solución:** PagedAttention elimina casi toda la fragmentación al usar bloques de tamaño fijo no contiguos (ver [Apéndice B - Patrones de diseño de sistemas](G-Patrones-de-diseno-de-sistemas.md)).
@@ -110,7 +118,8 @@ nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv
 
 ## Comandos y métricas de diagnóstico de referencia
 
-> [!tip] Caja de herramientas
+> [!TIP]
+> **Caja de herramientas**
 > ```bash
 > # GPU: ocupación (u), memoria (m), reloj/energía (c/p)
 > nvidia-smi dmon -s ucmp -d 1

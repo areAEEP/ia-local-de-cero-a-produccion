@@ -25,11 +25,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > Un sistema de inferencia que no se observa es una caja negra a la deriva. Aquí construimos la observabilidad de un servicio de LLM desde primeros principios: las **tres capas** que hay que vigilar, **MLflow** como plano de control, el **trazado por petición** con **OpenTelemetry**, la integración con **Azure Monitor** / **Application Insights**, los tres *dashboards* imprescindibles, las alertas que de verdad disparan (basadas en **SLO/SLI** y *burn rate*), la diferencia entre evaluación clásica y de **GenAI**, la detección de *drift* (deriva) y la disciplina de qué loguear y qué no. Todo anclado en el despliegue de **Qwen3-0.6B**.
 
 ## Las tres capas: infraestructura, servicio y modelo
@@ -44,7 +46,8 @@ La observabilidad de un LLM en producción no es una sola cosa. Son tres planos 
 
 La regla de primeros principios: **una métrica de capa superior nunca explica un fallo de capa inferior, pero sí al revés**. Si la latencia p99 (servicio) se dispara, la causa casi siempre está en infraestructura (VRAM saturada, *swapping* de KV-cache) o en el modelo (salidas más largas). Por eso el orden de diagnóstico es siempre de arriba hacia abajo en síntoma, y de abajo hacia arriba en causa.
 
-> [!info] La distinción que más se olvida
+> [!NOTE]
+> **La distinción que más se olvida**
 > Un servicio puede tener latencia perfecta y *throughput* envidiable mientras genera basura. La capa de servicio y la capa de calidad son **ortogonales**. Necesitas ambas o no sabes nada.
 
 ## MLflow como plano de control
@@ -137,7 +140,8 @@ def generar(peticion):
 
 La granularidad correcta separa **prefill** (procesado del *prompt*, sensible a longitud de entrada) de **decode** (generación autoregresiva, sensible a longitud de salida). Sin esa separación no puedes saber si un pico de latencia viene de *prompts* largos o de respuestas largas. Los atributos clave (alias del modelo, tokens de entrada/salida, profundidad de cola) son los que luego permiten filtrar las trazas lentas.
 
-> [!tip] No instrumentes a ciegas
+> [!TIP]
+> **No instrumentes a ciegas**
 > Un *span* sin atributos útiles es ruido. La pregunta antes de cada `set_attribute` es: *¿filtraría o agruparía una investigación por este valor?* Si no, no lo añadas.
 
 ## Azure Monitor y Application Insights
@@ -159,7 +163,8 @@ La integración no es solo visualización: Azure Monitor es también el motor de
 
 No hagas un *dashboard* gigante. Haz tres, cada uno para un público y un momento distinto.
 
-> [!example] Los tres tableros
+> [!TIP]
+> **Los tres tableros**
 > 1. **Operacional (golden signals)** — para el ingeniero de guardia. Latencia p50/p95/p99, tasa de error, *throughput* (peticiones/s) y saturación (uso de GPU, profundidad de cola). Responde "¿está roto ahora?".
 > 2. **De negocio / coste** — para el responsable de producto. Peticiones por usuario, tokens consumidos, **coste por petición**, distribución de longitud de salida. Responde "¿es sostenible?".
 > 3. **De calidad del modelo** — para el equipo de ML. Tasa de rechazos, puntuaciones de evaluación *online*, señales de *drift*, distribución de la longitud de respuesta frente a la línea base. Responde "¿sigue siendo bueno?".
@@ -182,7 +187,8 @@ $$
 
 Un *burn rate* de 1 significa que agotarás el presupuesto justo al final de la ventana. Un *burn rate* de 14,4 sostenido una hora consume el 2 % del presupuesto mensual: eso sí merece despertar a alguien.
 
-> [!warning] Alertas multiventana
+> [!WARNING]
+> **Alertas multiventana**
 > La práctica recomendada combina una ventana corta (rápida, para incidentes agudos) y una larga (lenta, para degradaciones crónicas). Alertar solo cuando **ambas** superan el umbral elimina la mayoría de los falsos positivos.
 
 ## Evaluación: clásica frente a GenAI
@@ -218,7 +224,8 @@ Un $D$ grande con $p$ bajo señala que la distribución actual ya no se parece a
 
 La tentación es loguear todo. Es un error operativo y legal.
 
-> [!danger] No loguees *prompts* ni respuestas en crudo por defecto
+> [!CAUTION]
+> **No loguees *prompts* ni respuestas en crudo por defecto**
 > Pueden contener **PII** (información personal identificable). Almacenarlos sin control viola el RGPD y multiplica el coste de almacenamiento. Loguea **metadatos** (longitudes, latencias, alias del modelo, hashes), y solo el contenido bajo *opt-in* explícito, con anonimización y retención corta.
 
 Reglas de primeros principios:
@@ -227,7 +234,8 @@ Reglas de primeros principios:
 - **Muestreo de trazas**: en alto volumen, samplea (p. ej. 1–5 %) pero **garantiza el 100 % de las trazas de error**. El *tail-based sampling* hace exactamente eso.
 - **Coste como métrica de primera clase**: cada petición logueada con sus tokens permite calcular el coste, base del [capítulo de costes](11-Optimizacion-de-costes.md).
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - La observabilidad tiene **tres capas** ortogonales: infraestructura, servicio y modelo/calidad; necesitas las tres.
 > - **MLflow** es el plano de control; los **alias** (champion/challenger) desacoplan despliegue de decisión y habilitan *rollback* instantáneo.
 > - **OpenTelemetry** da trazado por petición; separa siempre *prefill* de *decode*.

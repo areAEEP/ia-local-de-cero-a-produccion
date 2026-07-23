@@ -16,7 +16,8 @@ estado: completo
 
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Diseñar evaluaciones pequeñas pero útiles.
 > - Comparar modelo base, cuantizado, fine-tuned y servido.
 > - Evitar decidir por impresiones aisladas.
@@ -163,7 +164,8 @@ lm_eval \
   --batch_size 1
 ```
 
-> [!warning] Recursos
+> [!WARNING]
+> **Recursos**
 > MMLU completo son miles de preguntas. Usa `--limit 100` o `--limit 500` para pruebas rápidas en local. Un benchmark completo de MMLU puede tardar horas en un 7B local.
 
 ### Comparar dos modelos

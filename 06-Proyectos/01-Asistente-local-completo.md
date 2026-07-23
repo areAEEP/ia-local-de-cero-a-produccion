@@ -18,11 +18,13 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Construir un pipeline completo con un caso real.
 > - Elegir modelo base, crear dataset, entrenar LoRA, fusionar, cuantizar y servir.
 > - Conectar el modelo a una API local o agente.

@@ -17,10 +17,12 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > El código Python y la API de Ollama son comunes. En este capítulo las tools quedan limitadas a una carpeta de laboratorio: no damos al modelo una shell abierta ni acceso a todo el disco, tampoco en un servidor Linux.
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Entender por qué un LLM aislado no puede actuar sobre el mundo y qué aporta un agente.
 > - Implementar un bucle ReAct mínimo con Ollama y funciones Python.
 > - Usar LangGraph para construir agentes locales con estado.
@@ -44,7 +46,8 @@ Un **agente** resuelve esto añadiendo un bucle de control alrededor del LLM: el
 | **LLM + tools** | Llamar APIs, leer ficheros, ejecutar código, buscar en web | Recuperar knowledge base propia eficientemente | Automatización, asistentes con acciones, scripting inteligente |
 | **LLM + RAG + tools** | Todo lo anterior + recuperar documentos de una base vectorial local | (su principal coste es complejidad y latencia) | Asistentes sobre documentación privada con capacidad de acción |
 
-> [!note] Relación con módulos previos
+> [!NOTE]
+> **Relación con módulos previos**
 > El módulo [07-RAG-Local](01-RAG-local.md) cubrió la recuperación. Aquí añadimos el bucle de acción. En la práctica, un agente completo combina ambas: RAG es una tool más dentro del bucle ReAct.
 
 ---
@@ -273,7 +276,8 @@ if __name__ == "__main__":
     run_agent("¿Qué temas aparecen en el README.md de esta carpeta de laboratorio?")
 ```
 
-> [!tip] Probarlo
+> [!TIP]
+> **Probarlo**
 
 ```text
 uv run python agent_loop.py
@@ -391,7 +395,8 @@ graph.add_edge("tools", "model")
 app = graph.compile()
 ```
 
-> [!note] Recursos
+> [!NOTE]
+> **Recursos**
 > La guía oficial de LangGraph: https://langchain-ai.github.io/langgraph/
 
 ---
@@ -484,7 +489,8 @@ asyncio.run(main())
 
 LangChain y otros frameworks ya tienen adaptadores `langchain-mcp-adapters` que convierten las tools MCP en tools LangChain utilizables por `create_react_agent`. Así, un agente puede usar indistintamente tools locales y tools remotas expuestas vía MCP.
 
-> [!tip] Recursos oficiales
+> [!TIP]
+> **Recursos oficiales**
 > - Especificación: https://modelcontextprotocol.io/
 > - SDK Python: https://github.com/modelcontextprotocol/python-sdk
 > - Servidores de referencia: https://github.com/modelcontextprotocol/servers
@@ -523,7 +529,8 @@ Un agente añade latencia (varias llamadas al LLM) y no determinismo. Si la tare
 
 Un agente es útil cuando el flujo **no es predecible**: el número de pasos y qué herramienta usar en cada uno dependen de los resultados intermedios. Si puedes dibujar el flowchart antes de tiempo, usa un pipeline, no un agente.
 
-> [!warning] Regla práctica
+> [!WARNING]
+> **Regla práctica**
 > Si puedes escribir el flujo como `prompt1 → tool1 → prompt2 → tool2`, no necesitas un bucle ReAct. Necesitas un pipeline. El agente es para cuando el próximo paso depende del resultado del anterior y no lo sabes a priori.
 
 ---
@@ -618,7 +625,8 @@ Construye un agente local que responda preguntas sobre tu propia bóveda de Obsi
 
 ---
 
-> [!tip] Próximos pasos
+> [!TIP]
+> **Próximos pasos**
 > Este módulo es base directa del proyecto final del curso ([06-Proyecto-Final](../06-Proyectos/01-Asistente-local-completo.md)), donde integrarás RAG + agente + evaluación. Para evaluar la calidad de las respuestas del agente, consulta [Evaluacion-LLMs-Local](../07-Anexos/A-Evaluacion-local-sin-autoengano.md). Para el stack de inferencia subyacente, repasa [02-Inferencia](../02-Uso-local/01-Inferencia-con-Ollama-llama.cpp-y-MLX.md).
 
 ---

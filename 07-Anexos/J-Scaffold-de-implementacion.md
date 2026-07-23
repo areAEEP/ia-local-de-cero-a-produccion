@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Resumen
+> [!NOTE]
+> **Resumen**
 > Esqueleto de proyecto de calidad de producción para un servicio de inferencia de LLMs. Mostramos el **árbol de directorios** de referencia y, para cada patrón clave, un fragmento de Python listo para producción: **type hints**, **logging estructurado**, **spans de OpenTelemetry**, **retry boundaries**, **assets de despliegue** (Azure ML) y **utilidades de evaluación**. El servicio sirve un modelo tipo Qwen3-0.6B; las dimensiones de configuración están ancladas en él.
 
 ---
@@ -66,7 +68,8 @@ llmops-serving/
 
 ## Patrón: configuración tipada y type hints
 
-> [!note] Por qué
+> [!NOTE]
+> **Por qué**
 > Los *type hints* documentan contratos y permiten a `mypy` cazar errores antes de runtime. La configuración tipada con `pydantic` valida los parámetros de serving al arrancar (fallo rápido si una variable de entorno está mal).
 
 ```python
@@ -91,7 +94,8 @@ settings = Settings()  # falla aquí si algún valor es inválido
 
 ## Patrón: logging estructurado
 
-> [!note] Por qué
+> [!NOTE]
+> **Por qué**
 > Los logs en JSON son *parseables* por máquinas y correlacionables por `request_id`. Nunca uses `print`; nunca logues secretos ni el contenido íntegro del prompt en producción.
 
 ```python
@@ -122,7 +126,8 @@ def configurar_logging(nivel: int = logging.INFO) -> None:
 
 ## Patrón: spans de OpenTelemetry
 
-> [!note] Por qué
+> [!NOTE]
+> **Por qué**
 > El *tracing* distribuido descompone el ciclo de vida de una petición (cola → prefill → decode → respuesta) en spans con atributos, permitiendo atribuir la latencia a cada fase. Es la base para diagnosticar TTFT/TPOT (ver [11 - Observabilidad y monitorización](../05-LLMOps/10-Observabilidad-y-monitorizacion.md)).
 
 ```python
@@ -156,7 +161,8 @@ def generar(prompt: str, request_id: str) -> str:
 
 ## Patrón: retry boundaries
 
-> [!note] Por qué
+> [!NOTE]
+> **Por qué**
 > Reintentar solo en los **límites** correctos (fallos transitorios e idempotentes) y con *backoff* exponponencial + *jitter* evita las *retry storms*. No reintentes errores de validación (4xx) ni operaciones no idempotentes.
 
 ```python
@@ -182,7 +188,8 @@ def llamar_motor(peticion: dict) -> dict:
 
 ## Patrón: assets de despliegue (Azure ML)
 
-> [!note] Por qué
+> [!NOTE]
+> **Por qué**
 > Infraestructura como código: el endpoint y el deployment son declarativos, versionables y reproducibles. La imagen se fija por *digest*, no por `latest` (ver [10 - Despliegue en Azure ML](../05-LLMOps/09-Despliegue-en-Azure-ML.md)).
 
 ```yaml
@@ -226,7 +233,8 @@ def ready(resp: Response) -> dict:
 
 ## Patrón: utilidades de evaluación
 
-> [!note] Por qué
+> [!NOTE]
+> **Por qué**
 > Un *golden set* versionado y métricas reproducibles permiten detectar regresiones de calidad (ver [Apéndice D - Guía de troubleshooting](I-Troubleshooting-de-serving.md)) antes y después de cada despliegue, y comparar configuraciones de cuantización.
 
 ```python
@@ -252,7 +260,8 @@ def evaluar(casos: list[CasoEval], generar) -> ResultadoEval:
     return ResultadoEval(exactitud=aciertos / len(casos), n_casos=len(casos))
 ```
 
-> [!checklist] Antes de promover una build
+> [!TIP]
+> **Antes de promover una build**
 > - [ ] `mypy src/` sin errores.
 > - [ ] `pytest tests/` en verde.
 > - [ ] `evaluar()` sobre el golden set por encima del umbral.

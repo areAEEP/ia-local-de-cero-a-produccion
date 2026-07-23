@@ -25,11 +25,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > El coste de servir un LLM no es un misterio: es **aritmética**. Partimos de la **economía unitaria** (coste-por-token y coste-por-petición) y deshacemos la cadena de variables que la mueven, ordenadas por impacto: la **utilización de GPU** (la dominante), la **cuantización**, la **decodificación especulativa**, las **bases compartidas** (multi-LoRA) y las **instancias spot**. Cerramos con el *right-sizing* (dimensionar correctamente), la lectura de la **facturación basada en uso** como señal de mercado y un **ejemplo numérico completo** de coste-por-millón-de-tokens, anclado en **Qwen3-0.6B**.
 
 ## La economía unitaria: coste-por-token y coste-por-petición
@@ -46,7 +48,8 @@ $$
 \text{coste por petición} = \text{coste por token} \times (\text{tokens entrada} + \text{tokens salida})
 $$
 
-> [!info] El denominador lo es todo
+> [!NOTE]
+> **El denominador lo es todo**
 > El numerador (precio de la GPU) lo fija la nube y apenas lo controlas. El denominador (tokens útiles por hora) lo controlas tú casi por completo. **Optimizar coste es maximizar tokens útiles por hora-GPU.** Todo lo demás son corolarios de esta frase.
 
 ## La variable dominante: la utilización de GPU
@@ -84,7 +87,8 @@ $$
 
 Para Qwen3-0.6B (≈ 0,6 · 10⁹ parámetros): en bf16 (2 bytes) son ≈ 1,2 GB; en int4 (0,5 bytes) ≈ 0,3 GB. La compresión libera VRAM para KV-cache y *batch* mayor. El detalle técnico y el compromiso con la calidad están en [06 - Cuantización y compresión](06-Cuantizacion-y-compresion-avanzada.md).
 
-> [!warning] La cuantización no es gratis
+> [!WARNING]
+> **La cuantización no es gratis**
 > Reduce coste solo si la pérdida de calidad es tolerable para tu tarea. Cuantizar y luego perder un 5 % de calidad puede salir más caro si te obliga a reintentos o degrada el negocio. Mídelo con el *eval set* de [13 - Evaluación y monitorización de calidad](12-Evaluacion-y-calidad-en-produccion.md).
 
 ## La tercera variable: la decodificación especulativa
@@ -117,7 +121,8 @@ El ahorro es enorme cuando tienes muchas variantes con poco tráfico cada una: e
 
 Las **instancias spot** (capacidad sobrante de la nube) cuestan típicamente entre un 60 % y un 90 % menos que las *on-demand*, a cambio de poder ser **desalojadas** (*preempted*) con poco aviso.
 
-> [!tip] Spot sí, pero con red de seguridad
+> [!TIP]
+> **Spot sí, pero con red de seguridad**
 > Funcionan bien para cargas tolerantes a interrupción: *batch* offline, evaluaciones, reentrenos. Para *serving* online necesitas: réplicas en *on-demand* como base, *spot* para absorber picos, drenado limpio de conexiones al recibir el aviso de desalojo y reintentos idempotentes. Nunca pongas el 100 % del tráfico crítico en *spot*.
 
 ## *Right-sizing*: dimensionar correctamente
@@ -145,7 +150,8 @@ Leer esa señal sirve para dos decisiones:
 
 Pongamos números a la identidad. **Las cifras del hardware son hipotéticas y didácticas**; sustitúyelas por las reales de tu nube.
 
-> [!example] Supuestos del cálculo
+> [!TIP]
+> **Supuestos del cálculo**
 > - GPU alquilada: **1,00 €/hora** (supuesto didáctico).
 > - Qwen3-0.6B sirviendo con *continuous batching*.
 > - *Throughput* medido bajo carga: **2 000 tokens/segundo** de salida agregada.
@@ -189,7 +195,8 @@ El mismo modelo, el mismo hardware, **2,7× más caro por token** solo por dejar
 | Tráfico irregular sin batching | 30 % | 2 160 000 | ≈ 0,463 |
 | Línea ideal (teórico) | 100 % | 7 200 000 | ≈ 0,139 |
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - La economía unitaria es aritmética: **coste-por-token = coste-hora-GPU / tokens útiles por hora**.
 > - La **utilización de GPU** es la variable dominante; el ejemplo muestra 2,7× de diferencia solo por ociosidad.
 > - **Cuantización**, **decodificación especulativa** y **multi-LoRA** suben los tokens útiles por hora o reducen el hardware necesario.

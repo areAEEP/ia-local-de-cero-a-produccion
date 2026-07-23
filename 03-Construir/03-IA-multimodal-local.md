@@ -17,11 +17,12 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > Ollama y el ejemplo Python funcionan en los tres sistemas. Los apartados MLX/Metal son la ruta Apple; en Linux o Windows usa el backend compatible con tu GPU. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals]
+> [!TIP]
 > **Objetivos de este anexo:**
 > - Entender qué es un modelo multimodal y por qué difiere de un LLM texto-only.
 > - Conocer la arquitectura interna de los modelos vision-language (vision encoder + projector + LLM).
@@ -97,7 +98,7 @@ Ejemplo simplificado:
 - Cada patch → 1 embedding de dimensión *d* (p. ej. 1152 en ViT-L).
 - Tras el projector, esos 1024 vectores entran al LLM como "tokens visuales".
 
-> [!note]
+> [!NOTE]
 > Los VLM dinámicos (Qwen2-VL) ajustan la resolución de cada imagen al contenido: imágenes grandes generan más tokens visuales y consumen más contexto y más RAM. Una sola imagen de alta resolución puede ocupar **4 000–8 000 tokens** del contexto.
 
 ### Limitaciones
@@ -223,7 +224,7 @@ cmake --build build --config Release -j
   -n 512
 ```
 
-> [!warning]
+> [!WARNING]
 > Muchos VLM en llama.cpp necesitan **dos** archivos: el modelo principal y el vision projector (`mmproj-*.gguf`). Sin el projector, el modelo de lenguaje no puede interpretar la imagen. Sigue la ficha del GGUF elegido, porque algunos modelos modernos se empaquetan de otra forma.
 
 ---
@@ -265,7 +266,7 @@ mlx_whisper --model mlx-community/Whisper-large-v3-mlx \
 
 ## Ejercicio práctico
 
-> [!exercise]
+> [!TIP]
 > **Pipeline multimodal: imagen + audio → resumen**
 >
 > 1. Toma una captura de pantalla de tu escritorio (`Cmd+Shift+3`).
@@ -317,7 +318,8 @@ mlx_whisper --model mlx-community/Whisper-large-v3-mlx \
 
 ---
 
-> [!tip] Siguiente paso
+> [!TIP]
+> **Siguiente paso**
 > Profundiza en Whisper en el anexo dedicado: [Whisper-STT-Local](04-Voz-y-transcripcion-local.md).
 
 ---

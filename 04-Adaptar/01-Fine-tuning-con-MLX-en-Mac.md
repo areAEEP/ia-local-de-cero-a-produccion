@@ -18,11 +18,13 @@ estado: completo
 
 
 
-> [!info] Ruta Apple Silicon
+> [!NOTE]
+> **Ruta Apple Silicon**
 > Este capítulo nació para Mac con Apple Silicon. Si usas Windows, quédate con los conceptos y sigue la alternativa indicada en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Entender por qué full fine-tuning no es realista en un Mac M2 24 GB.
 > - Aplicar LoRA/QLoRA como vía práctica.
 > - Preparar datasets JSONL en formato chat/instruct.

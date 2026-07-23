@@ -17,11 +17,13 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Entender qué cambia al pasar de FP16 a INT8/INT4.
 > - Elegir niveles GGUF adecuados para 24 GB: Q4_K_M, Q5_K_M, Q6 y Q8.
 > - Cuantizar modelos con llama.cpp y MLX.

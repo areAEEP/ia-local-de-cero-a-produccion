@@ -25,11 +25,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > Medir la calidad de un LLM es el problema sin resolver de LLMOps: no hay una métrica única ni una verdad de referencia limpia. Construimos una disciplina práctica desde primeros principios: la diferencia entre evaluación **offline** y **online**, cómo **elegir métricas por tarea**, el uso responsable de **LLM-as-judge** (rúbricas, sesgos, *pairwise*), la construcción del **eval set** y su *golden set*, el **A/B testing** en producción, la **monitorización de drift**, **dos casos de estudio de fallo** reales y cómo **juntarlo todo**. Anclado en **Qwen3-0.6B**.
 
 ## Evaluación offline frente a online
@@ -44,7 +46,8 @@ Son dos regímenes complementarios, no alternativos.
 | Bucle | Lento, exhaustivo | Continuo, muestreado |
 | Riesgo | Sobreajuste al *eval set* | Coste y privacidad |
 
-> [!info] La regla de oro
+> [!NOTE]
+> **La regla de oro**
 > La evaluación **offline** es una **puerta** (*gate*) de despliegue: nada llega a producción sin pasarla. La **online** es un **vigía**: detecta lo que el *eval set* no anticipó. Necesitas las dos porque el *eval set* nunca cubre toda la distribución real.
 
 ## Elegir métricas por tarea
@@ -56,7 +59,8 @@ No existe "la métrica de calidad de un LLM". La métrica se deriva de la tarea.
 - **Generación abierta / chat**: rúbricas multidimensionales (utilidad, corrección, seguridad, tono) evaluadas por humanos o por LLM-as-judge.
 - **RAG**: *faithfulness* (fidelidad a las fuentes) y *answer relevance*, además de métricas de recuperación.
 
-> [!tip] Métricas baratas primero
+> [!TIP]
+> **Métricas baratas primero**
 > Pon siempre un suelo determinista barato (validez de formato, longitud, presencia de campos obligatorios) antes de gastar en juicios caros. Filtra lo obvio gratis.
 
 Para una tarea de extracción con Qwen3-0.6B, validar el JSON contra un esquema con `jsonschema` ya descarta una fracción de fallos sin invocar ningún juez.
@@ -88,7 +92,8 @@ Los **sesgos** del juez y sus mitigaciones:
 - **Sesgo de verbosidad**: premia respuestas largas. Mitigación: incluir "concisión" en la rúbrica y normalizar.
 - **Sesgo de auto-preferencia**: un juez prefiere salidas de su propia familia de modelos. Mitigación: usar un juez de familia distinta a la del modelo evaluado.
 
-> [!warning] Pairwise > escala absoluta
+> [!WARNING]
+> **Pairwise > escala absoluta**
 > Pedir "puntúa de 1 a 5" produce puntuaciones inconsistentes entre ejecuciones. La comparación **pairwise** ("¿cuál es mejor, A o B?") es mucho más estable y es la base natural del A/B testing.
 
 ## El propio *eval set*: construcción y *golden set*
@@ -111,7 +116,8 @@ graph TD
     class EVAL,GOLD,JUEZ internal-link;
 ```
 
-> [!danger] No filtres el eval set al entrenamiento
+> [!CAUTION]
+> **No filtres el eval set al entrenamiento**
 > Si los ejemplos del *eval set* acaban en los datos de *fine-tuning*, la evaluación queda contaminada y miente. Mantén una separación estricta, como en cualquier *train/test split*.
 
 ## A/B testing en producción
@@ -125,7 +131,8 @@ Mecánica de primeros principios:
 3. **Tamaño de muestra** suficiente: calcula el $n$ para detectar el efecto mínimo relevante con potencia estadística adecuada.
 4. **Significancia**: no declares ganador por una diferencia de ruido. Usa un test apropiado y corrige por comparaciones múltiples.
 
-> [!tip] Empieza con un *shadow deployment*
+> [!TIP]
+> **Empieza con un *shadow deployment***
 > Antes del A/B con usuarios, sirve el *challenger* en **sombra**: recibe copia del tráfico real pero su salida no llega al usuario. Comparas calidad y latencia sin riesgo. Luego pasas a A/B real con un 5 %.
 
 ## Monitorización de *drift*
@@ -140,10 +147,12 @@ La práctica recomendada es evaluar online sobre una **muestra continua** del tr
 
 ## Dos casos de estudio de fallo
 
-> [!example] Caso 1 — La degradación silenciosa por *drift* de entrada
+> [!TIP]
+> **Caso 1 — La degradación silenciosa por *drift* de entrada**
 > Un servicio de extracción con Qwen3-0.6B funcionaba al 96 % de validez de esquema. Un cliente empezó a enviar documentos en un idioma nuevo. Las métricas de **servicio** (latencia, errores) seguían perfectas: el modelo respondía rápido y sin excepciones. Pero la **validez de esquema** cayó al 70 %. El fallo solo era visible en la **capa de calidad**. *Lección*: las golden signals no detectan degradación de calidad; necesitas evaluación online y *drift* de entrada.
 
-> [!example] Caso 2 — El falso ganador del A/B mal medido
+> [!TIP]
+> **Caso 2 — El falso ganador del A/B mal medido**
 > Un *challenger* cuantizado a int4 mostró +3 % en la puntuación del juez y se promovió. Dos semanas después, quejas de usuarios. El problema: el juez tenía **sesgo de verbosidad** y el *challenger* simplemente respondía más largo; además el *golden set* no se había actualizado y no detectó pérdidas factuales. *Lección*: calibra el juez contra el *golden set*, neutraliza sesgos (concisión en rúbrica, *pairwise* con permutación) y no confíes en una métrica única.
 
 ## Juntándolo todo
@@ -163,7 +172,8 @@ graph LR
 
 El bucle: el *eval set* alimenta la puerta offline; el *challenger* que pasa va a sombra, luego a A/B; el ganador se promueve moviendo el alias; la evaluación online vigila el *drift* y, cuando algo se degrada, los casos de fallo realimentan el *eval set*. Es el mismo principio de mejora continua de MLOps, adaptado a la naturaleza no determinista de los LLM.
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - **Offline** es la puerta de despliegue; **online** es el vigía. Necesitas ambas.
 > - La métrica se **deriva de la tarea**; pon suelos deterministas baratos antes de juicios caros.
 > - **LLM-as-judge** escala, pero exige rúbricas explícitas y neutralizar sesgos (posición, verbosidad, auto-preferencia); prefiere **pairwise** a escala absoluta.

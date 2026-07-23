@@ -17,11 +17,12 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > whisper.cpp funciona en los tres sistemas y ofrece CPU, Metal, Vulkan, NVIDIA, AMD y OpenVINO según la compilación. `mlx-whisper` es solo para Apple Silicon.
 
 
-> [!goals]
+> [!TIP]
 > **Objetivos de este anexo:**
 > - Entender qué es STT (Speech-to-Text) y por qué Whisper cambió el panorama.
 > - Conocer la arquitectura encoder-decoder de Whisper y su ventanas de 30 s.
@@ -121,7 +122,7 @@ Whisper procesa el audio en **chunks de 30 s**. Internamente:
 - Cada chunk se codifica y decodifica independientemente.
 - Para chunks sin voz completa, el decoder puede generar tokens de timestamp para alinear.
 
-> [!warning]
+> [!WARNING]
 > La ventana de 30 s es una **limitación estructural**: audios con pausas largas o silencios pueden generar alucinaciones (el modelo "inventa" texto para llenar la ventana). Solución: usar **VAD** (Voice Activity Detection) para partir el audio en segmentos con voz real.
 
 ### Detección de idioma
@@ -276,7 +277,7 @@ time mlx_whisper reunion_16k.wav --model mlx-community/Whisper-medium-mlx \
   --language es --output-dir ./tmp
 ```
 
-> [!tip]
+> [!TIP]
 > En M2 Pro/Max, `mlx-whisper` con large-v3 suele ser ~1.5–2× más rápido que whisper.cpp en el mismo modelo.
 
 ---
@@ -340,7 +341,7 @@ Ejecutar:
 uv run python dictado_live.py
 ```
 
-> [!warning]
+> [!WARNING]
 > Este es un loop simple con latencia de ~5 s (duración del chunk + transcripción). Para streaming verdadero (< 1 s de latencia) se necesita [whisper_streaming](https://github.com/ufal/whisper_streaming) o [WhisperLive](https://github.com/collabora/WhisperLive), con VAD y buffer rodante.
 
 ---
@@ -385,7 +386,7 @@ uv run python dictado_live.py
 
 ## Ejercicio práctico
 
-> [!exercise]
+> [!TIP]
 > **Transcribe y resume una reunión de 5 minutos**
 >
 > 1. Graba 5 minutos de audio (puede ser un podcast en inglés o tu propia voz en español):
@@ -435,7 +436,8 @@ uv run python dictado_live.py
 
 ---
 
-> [!tip] Siguiente paso
+> [!TIP]
+> **Siguiente paso**
 > Si te encuentras errores durante la compilación o ejecución, consulta [Troubleshooting](../07-Anexos/E-Troubleshooting-local.md).
 
 ---

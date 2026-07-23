@@ -26,11 +26,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > La decodificación autorregresiva genera **un token por paso**, y cada paso vuelve a leer todos los pesos del modelo desde la memoria. Esto convierte el `decode` en una operación **limitada por memoria** (*memory-bound*), no por cómputo. La **decodificación especulativa** (*speculative decoding*) explota una asimetría brutal: verificar $k$ tokens propuestos en paralelo cuesta casi lo mismo que generar uno solo. Veremos el principio nuclear, los tres "sabores" (modelo borrador, Medusa, EAGLE), las matemáticas del *acceptance rate* y el *speedup*, qué cuesta a nivel de sistema y cuándo merece la pena de verdad.
 
 ## El principio nuclear: el decode es memory-bound
@@ -45,7 +47,8 @@ $$
 
 donde $P$ es el número de parámetros, $b$ los bytes por parámetro (2 en FP16/BF16) y $\text{BW}_{\text{mem}}$ el ancho de banda. Para Qwen3-0.6B en BF16, eso son $\sim 0{,}6\cdot10^9 \cdot 2 = 1{,}2$ GB que hay que mover **por cada token**. El tiempo del paso lo fija la memoria, no el cómputo.
 
-> [!important] La asimetría clave
+> [!IMPORTANT]
+> **La asimetría clave**
 > Si en lugar de un token de consulta procesamos **$k$ tokens de consulta a la vez** (un *forward* por lotes en la dimensión de secuencia), **leemos los pesos exactamente las mismas veces**. El coste de memoria apenas cambia; lo que crece es el cómputo, que estaba ocioso. Verificar $k$ tokens cuesta casi lo mismo que generar 1.
 
 Aquí está la idea germinal: si tuviéramos una forma barata de **adivinar** los próximos $k$ tokens, podríamos **verificarlos todos en un solo *forward***. Cada token que la adivinación acierte es un token "gratis", obtenido sin un paso completo de decode adicional.
@@ -72,7 +75,8 @@ El enfoque clásico, propuesto por Leviathan et al. y Chen et al. (2023). Usamos
 
 El borrador genera $k$ tokens de forma autorregresiva (es barato porque es pequeño), y el objetivo los **verifica de una pasada**. La distribución final es **idéntica** a la del modelo objetivo solo, gracias al *muestreo de rechazo* (lo veremos abajo).
 
-> [!tip] Pareja borrador-objetivo
+> [!TIP]
+> **Pareja borrador-objetivo**
 > Para [Qwen3-0.6B](02-Modelo-de-referencia-Qwen3-0.6B.md) como **objetivo**, no hay mucho margen: ya es diminuto, así que un borrador útil tendría que ser ridículamente pequeño. La decodificación especulativa con modelo borrador brilla cuando el **objetivo es grande** (p. ej. un Qwen3 de 32B verificando un borrador de 0,6B). Aquí Qwen3-0.6B encaja mejor como **borrador**, no como objetivo.
 
 ### Sabor 2 — Medusa-style (cabezales paralelos)
@@ -109,7 +113,8 @@ El truco que hace esto **exacto** y no una aproximación es el **muestreo de rec
 1. Se acepta $x$ con probabilidad $\min\left(1, \dfrac{p(x)}{q(x)}\right)$.
 2. Si se rechaza, se muestrea de la **distribución residual** normalizada $p'(x) = \dfrac{\max(0,\, p(x) - q(x))}{\sum_x \max(0,\, p(x) - q(x))}$.
 
-> [!note] Por qué la salida es idéntica al modelo grande
+> [!NOTE]
+> **Por qué la salida es idéntica al modelo grande**
 > Se puede demostrar que la distribución resultante de este procedimiento es **exactamente** $p(x)$. La decodificación especulativa **no degrada la calidad**: produce muestras de la misma distribución que el modelo objetivo. Solo acelera. Esto la diferencia de la cuantización agresiva vista en [06 - Cuantización y compresión](06-Cuantizacion-y-compresion-avanzada.md), que sí altera la distribución.
 
 ### Speedup esperado
@@ -120,7 +125,8 @@ $$
 S \approx \frac{\mathbb{E}[\text{aceptados}] + 1}{1 + k \cdot c}
 $$
 
-> [!example] Un cálculo concreto
+> [!TIP]
+> **Un cálculo concreto**
 > Con $\alpha = 0{,}8$, $k = 4$ y un borrador que cuesta $c = 0{,}1$:
 > - $\mathbb{E}[\text{aceptados}] = \dfrac{0{,}8\,(1 - 0{,}8^{4})}{1 - 0{,}8} = \dfrac{0{,}8 \cdot 0{,}5904}{0{,}2} \approx 2{,}36$
 > - Avanzamos $\approx 3{,}36$ tokens por iteración.
@@ -161,27 +167,31 @@ La decodificación especulativa no es gratis. Los costes reales:
 - **Rollback (retroceso)**: cuando se rechaza un token, hay que **descartar** el trabajo de KV cache de los tokens posteriores ya procesados especulativamente. La gestión del KV cache debe soportar truncado eficiente.
 - **Sensibilidad al dominio**: $\alpha$ depende fuertemente de **qué se genera**. Texto repetitivo o muy predecible (código *boilerplate*, formatos rígidos) eleva $\alpha$; texto creativo o de alta entropía la hunde.
 
-> [!warning] El speedup se evapora con batch grande
+> [!WARNING]
+> **El speedup se evapora con batch grande**
 > En servidores con **alto *throughput*** y lotes grandes, la fase de decode **ya está saturando el cómputo** (deja de ser memory-bound porque hay muchas secuencias en paralelo). En ese régimen, la decodificación especulativa **aporta poco o incluso ralentiza**, porque el cómputo extra de la verificación ya no era "gratis". Brilla en **baja latencia, lote pequeño** (idealmente $B=1$).
 
 ## Decodificación especulativa en la práctica: cuándo merece la pena
 
 Reglas prácticas destiladas:
 
-> [!check] Merece la pena cuando…
+> [!TIP]
+> **Merece la pena cuando…**
 > - **Latencia interactiva con lote pequeño** ($B=1$ o muy bajo): chatbots, copilotos, agentes de un solo usuario.
 > - **Modelo objetivo grande**, donde un borrador 10-20× menor mantiene buen $\alpha$.
 > - **Dominio predecible**: generación de código estructurado, plantillas, salidas con formato fijo.
 > - Tienes un borrador **bien alineado** con el objetivo (misma familia/tokenizador), que es lo que sube $\alpha$.
 
-> [!failure] No merece la pena cuando…
+> [!CAUTION]
+> **No merece la pena cuando…**
 > - Sirves con **lotes grandes** y optimizas *throughput*: el decode ya no es memory-bound.
 > - El **objetivo ya es minúsculo** (como [Qwen3-0.6B](02-Modelo-de-referencia-Qwen3-0.6B.md) usado como objetivo): no hay borrador suficientemente más barato.
 > - La VRAM está al límite y el borrador robaría espacio crítico al KV cache.
 
 Para la familia Qwen3, el patrón natural es usar **Qwen3-0.6B como borrador** de un objetivo grande (p. ej. 14B o 32B): comparten tokenizador y estilo de pre-entrenamiento, lo que tiende a dar tasas de aceptación altas. EAGLE-style suele ser la opción más rentable cuando se puede invertir en entrenar la cabeza ligera, porque maximiza $\alpha$ con poca memoria extra.
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - El **decode es memory-bound**: verificar $k$ tokens en paralelo cuesta casi lo mismo que generar 1; ahí nace todo el ahorro.
 > - **Tres sabores**: *draft model* (segundo modelo), **Medusa** (cabezales paralelos sobre el target) y **EAGLE** (autorregresión en el espacio de características, mayor $\alpha$).
 > - El **muestreo de rechazo** garantiza que la salida es **distribucionalmente idéntica** al modelo objetivo: aceleras sin perder calidad.

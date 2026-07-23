@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > La cuantización (*quantization*) reduce la precisión numérica con la que representamos un modelo: de 32 o 16 bits por número a 8 o incluso 4 bits. El premio es doble: **menos memoria** (los pesos ocupan una fracción) y **más velocidad** (mover menos bytes acelera kernels memory-bound, ver [05 - Batching y scheduling](05-Batching-y-scheduling.md)). El reto es no destruir la calidad. Recorreremos los **formatos numéricos** y su anatomía de bits; **dónde** se cuantiza (pesos, activaciones, KV cache); la diferencia entre **PTQ** y **QAT**; los métodos **GPTQ** y **AWQ**; implementaremos **un cuantizador INT8 simétrico desde cero**; veremos cómo **medir la pérdida de calidad**; y revisaremos el soporte en motores de producción. Anclamos en **Qwen3-0.6B**.
 
 ## Formatos numéricos
@@ -44,7 +46,8 @@ Un número en coma flotante se compone de tres campos: **signo** (1 bit), **expo
 | **INT8** | 8 | (1) | — | — | Entero; 256 niveles; necesita escala |
 | **INT4** | 4 | (1) | — | — | Entero; 16 niveles; agresivo, requiere métodos cuidadosos |
 
-> [!info] BF16 frente a FP16: por qué importa el reparto de bits
+> [!NOTE]
+> **BF16 frente a FP16: por qué importa el reparto de bits**
 > Ambos ocupan 16 bits, pero **BF16** conserva los 8 bits de exponente de FP32, así que cubre el mismo rango dinámico (evita overflow/underflow en entrenamiento) sacrificando mantisa. **FP16** invierte el compromiso: más mantisa (precisión), menos exponente (rango). Para inferencia con pesos bien acotados, FP16 suele bastar; para entrenamiento estable, BF16 es preferible.
 
 La idea central de la cuantización entera: representamos un rango continuo de valores reales con un número finito de niveles enteros mediante una **escala** $s$ (y opcionalmente un *zero-point* $z$):
@@ -63,7 +66,8 @@ No todo se cuantiza igual ni con la misma facilidad:
 - **Activaciones (*activations*).** Cambian con cada entrada y contienen **outliers** (valores atípicos enormes) que dificultan la cuantización. La cuantización de activaciones (esquemas W8A8) acelera el cómputo usando aritmética entera, pero es más delicada.
 - **KV cache.** En contextos largos la KV cache (ver [03 - Atención y KV cache](03-Atencion-y-KV-cache.md)) domina la memoria. Cuantizarla a FP8 o INT8 permite **contextos más largos** o **más concurrencia**, a costa de algo de calidad en la atención.
 
-> [!warning] El problema de los outliers en activaciones
+> [!WARNING]
+> **El problema de los outliers en activaciones**
 > En modelos grandes, unas pocas dimensiones de las activaciones presentan magnitudes muchísimo mayores que el resto. Si aplicas una sola escala global, esos outliers obligan a una escala enorme que aplasta la resolución del resto de valores. Por eso la cuantización de activaciones necesita escalas por canal/grupo o técnicas que reubiquen la dificultad (es justo el problema que ataca AWQ).
 
 ## Calibración: PTQ frente a QAT
@@ -74,7 +78,8 @@ Cuantizar bien requiere elegir buenas escalas, y para eso hay dos filosofías:
 
 **QAT (*Quantization-Aware Training*).** Se **simula** la cuantización **durante el entrenamiento** (o un fine-tuning), de modo que el modelo aprende pesos robustos a la pérdida de precisión. Da la mejor calidad a bits muy bajos, pero exige reentrenar: caro, lento y muchas veces inviable para modelos de terceros.
 
-> [!tip] Regla práctica
+> [!TIP]
+> **Regla práctica**
 > Empieza siempre por **PTQ**: para W8 (8 bits) la pérdida de calidad suele ser despreciable y el ahorro inmediato. Reserva **QAT** para cuando necesites bits muy agresivos (INT4 o menos) en un modelo crítico y tengas presupuesto de entrenamiento. El conjunto de calibración debe parecerse a tu tráfico real; uno mal elegido genera escalas malas.
 
 ## GPTQ
@@ -99,7 +104,8 @@ $$
 W x = (W \cdot \text{diag}(s)) \cdot (\text{diag}(s)^{-1} x)
 $$
 
-> [!info] GPTQ vs. AWQ en una frase
+> [!NOTE]
+> **GPTQ vs. AWQ en una frase**
 > **GPTQ** corrige el error iterativamente compensando con los pesos restantes (centrado en el peso). **AWQ** protege los canales importantes reescalándolos antes de cuantizar (centrado en la activación). Ambos son PTQ de pesos para INT4 y, en la práctica, dan calidades comparables; el ganador depende del modelo y del kernel disponible en tu motor.
 
 ## Un cuantizador INT8 simétrico desde cero
@@ -156,10 +162,12 @@ error_max = np.max(np.abs(pesos - recuperado))
 print("Error maximo:", error_max)   # <= escala / 2
 ```
 
-> [!example] Qué observar en el resultado
+> [!TIP]
+> **Qué observar en el resultado**
 > El **error de cuantización** de cada elemento está acotado por $s/2$ (la mitad de un paso de escala). Por eso un único outlier grande (que infla `amax` y por tanto `escala`) degrada la resolución de **todos** los demás valores: es la raíz del problema de outliers y la motivación de cuantizar **por grupos** (un `amax`/escala por cada bloque de, p. ej., 128 pesos) en lugar de uno global por tensor.
 
-> [!tip] Cuantización por grupos (*group-wise*)
+> [!TIP]
+> **Cuantización por grupos (*group-wise*)**
 > Los métodos de producción no usan una escala única por tensor sino una **escala por grupo** (grupos de 64 o 128 elementos). Así un outlier solo afecta a su grupo. Es el motivo por el que GPTQ/AWQ a INT4 funcionan razonablemente: combinan group-wise con su tratamiento específico del error.
 
 ## Medir la pérdida de calidad
@@ -174,12 +182,14 @@ $$
 
 Más baja es mejor. Es rápida de calcular sobre un corpus fijo (p. ej. WikiText) y muy útil para **comparar** el modelo cuantizado contra el original: un aumento pequeño de PPL indica degradación leve.
 
-> [!warning] La perplejidad no lo cuenta todo
+> [!WARNING]
+> **La perplejidad no lo cuenta todo**
 > Un modelo puede mantener una PPL casi idéntica y aun así fallar más en tareas concretas (razonamiento, código, seguimiento de instrucciones). La PPL es un **proxy barato**, no la verdad final.
 
 **Métricas downstream (de tarea).** Evalúan el comportamiento en lo que de verdad importa: precisión (*accuracy*) en benchmarks de conocimiento o razonamiento, tasa de aciertos en código, calidad de respuestas con un juez, etc. Son más caras pero capturan degradaciones que la PPL no ve.
 
-> [!tip] Protocolo mínimo de validación
+> [!TIP]
+> **Protocolo mínimo de validación**
 > 1. Mide la **PPL** del modelo original y del cuantizado sobre el mismo corpus. Un delta pequeño es buena señal de partida.
 > 2. Ejecuta **al menos una métrica downstream** representativa de tu caso de uso real.
 > 3. Compara también **latencia y throughput** (ver [05 - Batching y scheduling](05-Batching-y-scheduling.md)) para confirmar que el ahorro de memoria se traduce en velocidad, no solo en VRAM libre.
@@ -193,10 +203,12 @@ No basta con cuantizar el fichero de pesos; el **motor de inferencia** necesita 
 
 **TensorRT-LLM** (NVIDIA). Compila el modelo en *engines* optimizados para una GPU concreta, con soporte fuerte de **FP8** e **INT4/INT8** y fusión de kernels muy agresiva. Suele dar el máximo rendimiento en hardware NVIDIA reciente, a costa de un paso de compilación y menos portabilidad.
 
-> [!danger] El formato debe casar con el kernel
+> [!CAUTION]
+> **El formato debe casar con el kernel**
 > Un checkpoint cuantizado con un método X solo corre rápido si el motor tiene el kernel para X en tu GPU. Un formato sin kernel optimizado puede **dequantizar al vuelo a FP16** y perder toda la ventaja de velocidad (conservando solo el ahorro de memoria). Verifica siempre la compatibilidad formato–motor–GPU antes de comprometerte con un esquema.
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - Los **formatos** reparten bits entre rango (exponente) y precisión (mantisa); INT8/INT4 ahorran memoria proporcionalmente a los bits, pero necesitan **escala**.
 > - Se cuantizan sobre todo los **pesos** (estáticos, fáciles); las **activaciones** (outliers) y la **KV cache** son más delicadas.
 > - **PTQ** (sin reentrenar, con calibración) es la opción por defecto; **QAT** reserva su coste para bits muy agresivos.

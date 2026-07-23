@@ -18,11 +18,13 @@ last_review: 2026-07-05
 
 
 
-> [!info] Ruta Apple Silicon
+> [!NOTE]
+> **Ruta Apple Silicon**
 > Este capítulo nació para Mac con Apple Silicon. Si usas Windows, quédate con los conceptos y sigue la alternativa indicada en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Elegir modelos que realmente caben en 24 GB.
 > - Comparar usos: chat, código, razonamiento, fine-tuning y agentes.
 > - Mantener una tabla viva de tamaños y rendimiento medidos.

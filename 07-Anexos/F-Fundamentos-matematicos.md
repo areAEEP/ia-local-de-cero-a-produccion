@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Resumen
+> [!NOTE]
+> **Resumen**
 > Este apéndice deriva, desde primeros principios, las matemáticas que sustentan el serving de LLMs. Empezamos por el **softmax numéricamente estable** (el ladrillo de toda la atención), seguimos con el **online softmax** que es el corazón de FlashAttention, formalizamos la **scaled dot-product attention**, cuantificamos la **memoria de la KV cache**, construimos un **modelo de throughput de decoding**, contamos los **parámetros de LoRA** y cerramos con las **derivaciones de sampling** (temperature y top-p). Todas las cifras concretas están ancladas en **Qwen3-0.6B** y sus dimensiones públicas; no inventamos números.
 
 ---
@@ -61,7 +63,8 @@ def softmax_estable(z: np.ndarray) -> np.ndarray:
     return e / np.sum(e)     # denominador >= 1
 ```
 
-> [!tip] LogSumExp
+> [!TIP]
+> **LogSumExp**
 > La misma idea genera la identidad **log-sum-exp**, omnipresente en la log-verosimilitud:
 > $$\log \sum_j e^{z_j} = m + \log \sum_j e^{z_j - m}.$$
 
@@ -110,7 +113,8 @@ def online_softmax_attention(q, K, V, bloque=64):
     return o / l
 ```
 
-> [!note] Por qué importa en LLMOps
+> [!NOTE]
+> **Por qué importa en LLMOps**
 > Sin materializar $S$, el coste de memoria de la atención pasa de $O(N^2)$ a $O(N)$. Para contextos largos esto es la diferencia entre caber o no caber en la GPU.
 
 ---
@@ -146,7 +150,8 @@ $$
 
 donde el $2$ cubre **K y V**, $L$ es el número de capas, $H_{kv}$ las cabezas de clave/valor (clave para GQA), $d_k$ la dimensión por cabeza, $S$ la longitud de secuencia, $B$ el tamaño de batch y $b$ los bytes por elemento (2 en `fp16`/`bf16`).
 
-> [!example] Qwen3-0.6B, una secuencia de 4096 tokens en bf16
+> [!TIP]
+> **Qwen3-0.6B, una secuencia de 4096 tokens en bf16**
 > Con $L=28$, $H_{kv}=8$, $d_k=128$, $S=4096$, $B=1$, $b=2$:
 > $$M_{\text{KV}} = 2 \cdot 28 \cdot 8 \cdot 128 \cdot 4096 \cdot 1 \cdot 2 \approx 4.69\times10^{8}\ \text{bytes} \approx 0.44\ \text{GiB}.$$
 > Observa el ahorro de GQA: con MHA ($H_{kv}=16$) la cifra se duplicaría a $\approx 0.88$ GiB.
@@ -165,7 +170,8 @@ $$
 
 donde $P$ es el número de parámetros, $b$ bytes por parámetro y $\text{BW}_{\text{mem}}$ el ancho de banda efectivo (GB/s).
 
-> [!example] Qwen3-0.6B en bf16 sobre una GPU con BW = 1000 GB/s
+> [!TIP]
+> **Qwen3-0.6B en bf16 sobre una GPU con BW = 1000 GB/s**
 > $P = 0.6\times10^{9}$, $b=2$:
 > $$t_{\text{token}} \approx \frac{0.6\times10^{9}\cdot 2}{1000\times10^{9}} = 1.2\times10^{-3}\ \text{s} = 1.2\ \text{ms},$$
 > es decir un techo teórico de $\approx 833$ tokens/s para un único stream.
@@ -190,7 +196,8 @@ $$
 
 frente a $d_{in}\cdot d_{out}$ del fine-tuning completo. La salida se escala por $\alpha/r$ donde $\alpha$ es un hiperparámetro.
 
-> [!example] Una proyección de Qwen3-0.6B con $d_{in}=d_{out}=1024$, $r=8$
+> [!TIP]
+> **Una proyección de Qwen3-0.6B con $d_{in}=d_{out}=1024$, $r=8$**
 > - Completo: $1024\times1024 = 1\,048\,576$ parámetros.
 > - LoRA: $8\,(1024+1024) = 16\,384$ parámetros.
 > - Ratio: $16\,384 / 1\,048\,576 \approx 1.56\%$.
@@ -246,7 +253,8 @@ def sample_temp_topp(logits: np.ndarray, T: float = 0.8, p: float = 0.9) -> int:
     return int(np.random.choice(nucleo, p=p_nucleo))
 ```
 
-> [!warning] Orden de operaciones
+> [!WARNING]
+> **Orden de operaciones**
 > La temperatura se aplica **antes** del softmax y top-p **después**. Invertir el orden cambia la semántica: top-p sobre logits sin temperar usa una distribución distinta de la que finalmente se muestrea.
 
 ---

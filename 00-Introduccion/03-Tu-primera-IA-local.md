@@ -54,7 +54,8 @@ ollama list
 
 Desconecta el Wi-Fi durante una pregunta breve. Si el modelo ya está descargado y Ollama no tiene activada ninguna función cloud, debe seguir respondiendo. Vuelve a conectar la red al terminar.
 
-> [!note] Una comprobación honesta
+> [!NOTE]
+> **Una comprobación honesta**
 > Que responda offline prueba dónde se ejecuta la inferencia. No prueba por sí solo que ninguna interfaz, plugin o herramienta adicional envíe datos cuando la red está activa.
 
 ## 3. Llama a la API

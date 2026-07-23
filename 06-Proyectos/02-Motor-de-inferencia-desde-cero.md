@@ -25,11 +25,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Objetivo del proyecto
+> [!NOTE]
+> **Objetivo del proyecto**
 > Construir, desde primeros principios y sin apoyarse en `model.generate()`, un **motor de inferencia** (en inglés *inference engine*) completo para **Qwen3-0.6B**. Implementarás el ciclo entero: carga de pesos, tokenización, fase de *prefill*, fase de *decode* con **KV cache** (caché de claves y valores), estrategias de *sampling* (muestreo), condiciones de parada y un *batching* (procesamiento por lotes) básico. Al terminar entenderás exactamente qué ocurre en cada `forward` y por qué la latencia y el coste se reparten como se reparten.
 
 ## Objetivo y resultado esperado
@@ -48,7 +50,8 @@ Trabajamos sobre Qwen3-0.6B porque cabe holgadamente en una GPU modesta (≈ 0.6
 | `safetensors` | lectura de pesos |
 | GPU | cualquiera con ≥ 4 GB; CPU válida para depurar |
 
-> [!tip] Disciplina de proyecto
+> [!TIP]
+> **Disciplina de proyecto**
 > Prohibido llamar a `model.generate()`, `model.forward()` con caché automática o utilidades de *sampling* de `transformers`. Sí está permitido reutilizar los **módulos de capa** del modelo (las matrices de atención y MLP) o reimplementarlas; la decisión la fijas en el Milestone 1.
 
 ## Arquitectura
@@ -134,7 +137,8 @@ def prefill(input_ids: torch.Tensor):
     return logits, kv_cache
 ```
 
-> [!note] Por qué solo el último token
+> [!NOTE]
+> **Por qué solo el último token**
 > Para predecir el siguiente token únicamente necesitamos los *logits* de la última posición. Los $T-1$ restantes ya cumplieron su papel: poblar la caché.
 
 ### 4. Bucle de decode (un token cada vez)
@@ -206,7 +210,8 @@ def empaquetar(prompts, pad_id):
             torch.tensor(mascara, device=device))
 ```
 
-> [!info] Hacia el batching dinámico
+> [!NOTE]
+> **Hacia el batching dinámico**
 > El lote estático desperdicia cómputo cuando las secuencias terminan en momentos distintos. La extensión natural es el *continuous batching* (lote continuo): retirar secuencias terminadas y añadir nuevas en cada paso. Se aborda como extensión opcional y se trata en [05 - Batching y scheduling](../05-LLMOps/05-Batching-y-scheduling.md).
 
 ## Criterios de aceptación
@@ -221,16 +226,20 @@ def empaquetar(prompts, pad_id):
 
 ## Errores comunes
 
-> [!warning] Padding por la derecha en decoder-only
+> [!WARNING]
+> **Padding por la derecha en decoder-only**
 > Si rellenas por la derecha, el último token "real" deja de estar en la posición $-1$ y muestrearás a partir de un token de *padding*. En modelos *decoder-only* el *padding* va **siempre a la izquierda**.
 
-> [!warning] Olvidar la máscara de atención con padding
+> [!WARNING]
+> **Olvidar la máscara de atención con padding**
 > Sin `attention_mask`, los tokens de relleno contaminan la atención. Pasa siempre la máscara al `forward` del *prefill*.
 
-> [!warning] Reescalar logits dos veces
+> [!WARNING]
+> **Reescalar logits dos veces**
 > Aplicar temperatura y luego volver a normalizar tras *top-p* sin cuidado puede sesgar la distribución. Normaliza una sola vez, al final, tras filtrar.
 
-> [!warning] Crecimiento descontrolado de la caché
+> [!WARNING]
+> **Crecimiento descontrolado de la caché**
 > Si no fijas un tope de contexto, secuencias largas agotan la VRAM. Define un `max_position_embeddings` efectivo y rechaza o trunca lo que lo supere.
 
 ## Extensiones opcionales
@@ -240,7 +249,8 @@ def empaquetar(prompts, pad_id):
 3. **Speculative decoding** (decodificación especulativa): un modelo borrador propone varios tokens y el modelo grande los verifica.
 4. **Cuantización del KV cache** a int8 para duplicar la longitud servible (puente hacia [06 - Cuantización y compresión](../05-LLMOps/06-Cuantizacion-y-compresion-avanzada.md)).
 
-> [!success] Qué has aprendido
+> [!TIP]
+> **Qué has aprendido**
 > Has desmontado la caja negra de `generate()`: sabes diferenciar *prefill* de *decode*, entiendes por qué la KV cache convierte un coste cuadrático repetido en uno casi lineal, dominas las tres palancas de *sampling* y has construido el primer eslabón —el lote estático— de un planificador de *serving*. Esta base sostiene todo lo que viene después.
 
 ## Enlaces relacionados

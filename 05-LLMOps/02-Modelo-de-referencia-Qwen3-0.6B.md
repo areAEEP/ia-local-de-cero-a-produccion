@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > - Conocerás en detalle la arquitectura de **Qwen3-0.6B**, el modelo que usaremos como banco de pruebas concreto durante todo el curso.
 > - Entenderás por qué **Grouped-Query Attention (GQA)** no es solo un truco de calidad, sino una **decisión de serving** que reduce la KV cache.
 > - Verás cómo funcionan la tokenización y los **tokens especiales**, y por qué importan para el contrato de la API.
@@ -53,7 +55,8 @@ Necesitamos un modelo lo bastante pequeño para caber en una sola GPU modesta y 
 
 Hay un detalle aritmético que merece atención inmediata. En un *transformer* clásico se cumple $\text{hidden\_size} = \text{num\_heads}\times\text{head\_dim}$. Aquí, sin embargo, $16 \times 128 = 2048 \ne 1024$. Esto **no es un error**: indica que la dimensión total de la proyección de *queries* (2048) es mayor que `hidden_size` (1024). Es un patrón deliberado de los modelos Qwen3: la proyección de atención expande la dimensión antes de calcular los *scores* y luego una proyección de salida la devuelve a 1024. Lo importante para nosotros es separar tres dimensiones que a menudo se confunden: la del residual stream (`hidden_size` = 1024), la del cálculo de atención (`num_heads × head_dim`) y la de la KV cache (que depende de los **KV heads**, no de los *query heads*).
 
-> [!info] Decoder-only y RoPE
+> [!NOTE]
+> **Decoder-only y RoPE**
 > Qwen3 es **decoder-only**: cada token solo atiende a los anteriores (atención causal). La información de posición no se inyecta con embeddings absolutos sino con **RoPE** (Rotary Position Embeddings), que rota los vectores de query y key en función de su posición. RoPE es clave para extender el contexto y para que la KV cache sea reutilizable token a token.
 
 El bloque de cada una de las 28 capas sigue el patrón estándar: normalización (RMSNorm), atención GQA con RoPE, conexión residual, normalización, una MLP con activación tipo SwiGLU y otra conexión residual. La cabeza final proyecta el `hidden_size` de 1024 al vocabulario de ~151k para producir los *logits*.
@@ -102,7 +105,8 @@ $$
 \frac{\text{cache}_{\text{GQA}}}{\text{cache}_{\text{MHA}}} = \frac{n_{kv}}{n_{q}} = \frac{8}{16} = 0{,}5
 $$
 
-> [!tip] Por qué GQA es una decisión de serving, no solo de modelado
+> [!TIP]
+> **Por qué GQA es una decisión de serving, no solo de modelado**
 > Reducir la KV cache a la mitad significa que **caben el doble de tokens en vuelo** con la misma VRAM, o que un contexto el doble de largo cabe por petición. Como el decode es memory-bound y limitado por la lectura de la cache, GQA también **acelera** cada paso de generación. Es de las pocas optimizaciones que mejoran memoria, throughput y latencia a la vez con una pérdida de calidad mínima.
 
 Esta es la razón de que casi todos los modelos modernos de producción usen GQA: es una concesión deliberada de los diseñadores del modelo a quienes lo vamos a servir. En el [03 - Atención y KV cache](03-Atencion-y-KV-cache.md) desarrollaremos la mecánica completa y la fórmula exacta de la cache.
@@ -132,7 +136,8 @@ print(len(ids), ids[:8])
 
 Los **tokens especiales** estructuran la conversación. Qwen3 usa el formato *ChatML*, con marcadores como `<|im_start|>` y `<|im_end|>` que delimitan cada turno y su rol (system/user/assistant). El método `apply_chat_template` es el contrato real entre tu aplicación y el modelo: si lo formateas a mano y olvidas un marcador, el modelo se comporta de forma errática aunque "el texto parezca correcto".
 
-> [!warning] El tokenizador es parte del versionado
+> [!WARNING]
+> **El tokenizador es parte del versionado**
 > Un *mismatch* entre el tokenizador y los pesos —por ejemplo, cargar un tokenizador de otra versión del modelo— produce salidas corruptas **sin lanzar ninguna excepción**. Por eso, en la [capa de model assets](02-Modelo-de-referencia-Qwen3-0.6B.md), tokenizador y pesos se versionan y despliegan juntos como una unidad atómica.
 
 Hay una consecuencia económica directa: el **coste se factura por token**, no por palabra. Un texto en español ocupa más tokens que en inglés (el vocabulario está sesgado hacia el inglés y el código), y entender el ratio tokens/carácter de tu tráfico real es parte de la [optimización de costes](11-Optimizacion-de-costes.md).
@@ -159,10 +164,12 @@ texto = tok.apply_chat_template(
 )
 ```
 
-> [!example] El trade-off del "thinking"
+> [!TIP]
+> **El trade-off del "thinking"**
 > Para una tarea aritmética o de razonamiento en varios pasos, el modo *thinking* mejora la calidad de forma medible. Para una clasificación trivial ("¿este correo es spam?"), generar 800 tokens de razonamiento es puro despilfarro: multiplica el coste y la latencia sin ganancia. La regla operativa es **activar thinking solo donde el razonamiento aporta**, y exponerlo como un parámetro de la API gobernado por la lógica de la aplicación.
 
-> [!danger] El razonamiento no debe filtrarse al usuario
+> [!CAUTION]
+> **El razonamiento no debe filtrarse al usuario**
 > El bloque `<think>` es intermedio: tu capa de integración debe **parsearlo y descartarlo** (o registrarlo aparte para depuración) antes de devolver la respuesta. Filtrar el razonamiento al cliente es una fuga de comportamiento del modelo y, a menudo, de información sensible.
 
 ## Huella de memoria, de principio a fin
@@ -195,7 +202,8 @@ $$
 M_{\text{KV}}(32\text{k}) \approx 0{,}11\ \text{MB}\times 32\,768 \approx 3{,}6\ \text{GB}
 $$
 
-> [!info] La cache puede superar a los pesos
+> [!NOTE]
+> **La cache puede superar a los pesos**
 > Fíjate en la cifra: un único contexto de 32k tokens consume ~3,6 GB de KV cache, **tres veces el tamaño de los pesos** (1,2 GB). Multiplica por el número de peticiones concurrentes y entenderás por qué la KV cache —y no los pesos— es lo que satura un servidor de inferencia. De ahí la importancia de GQA, que ya nos ha dividido esta cifra a la mitad frente a MHA.
 
 **3. Activaciones.** Son los tensores temporales de cada *forward pass*. En decode (un token por paso) son pequeñas; en prefill, al procesar $L$ tokens en paralelo, escalan con $L$ y con el tamaño del batch. Suelen ser el sumando menor en modelos pequeños, pero no despreciable durante el prefill de prompts largos.
@@ -214,7 +222,8 @@ $$
 
 Esta ecuación es el corazón del *capacity planning*: con una GPU de VRAM conocida, restas los pesos y las activaciones y el resto es tu presupuesto de KV cache, que determina cuántos tokens concurrentes puedes servir. Volveremos a ella constantemente en el [05 - Batching y scheduling](05-Batching-y-scheduling.md) y en el [08 - De una GPU a inferencia multi-GPU](08-De-una-GPU-a-multi-GPU.md).
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - **Qwen3-0.6B** (28 capas, hidden 1024, 16 query / 8 KV heads, head_dim 128, vocab ~151k, contexto 32k) es nuestro modelo de referencia: pequeño para razonar a mano, moderno en sus decisiones.
 > - **GQA** (16 query / 8 KV heads) es una decisión de **serving**: divide a la mitad la KV cache frente a MHA, mejorando memoria, throughput y latencia a la vez.
 > - El **tokenizador** y los **tokens especiales** (ChatML) son el contrato real con el modelo; se versionan junto a los pesos.

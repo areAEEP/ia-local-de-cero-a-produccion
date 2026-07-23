@@ -16,11 +16,13 @@ estado: completo
 
 
 
-> [!info] Ruta Apple Silicon
+> [!NOTE]
+> **Ruta Apple Silicon**
 > Este capítulo nació para Mac con Apple Silicon. Si usas Windows, quédate con los conceptos y sigue la alternativa indicada en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals] Objetivos de aprendizaje
+> [!TIP]
+> **Objetivos de aprendizaje**
 > - Tener a mano comandos ejecutables para Ollama, llama.cpp y MLX.
 > - Reducir fricción al repetir pruebas.
 > - Usar esta nota como referencia rápida durante el curso.

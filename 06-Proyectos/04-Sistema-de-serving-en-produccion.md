@@ -26,11 +26,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Objetivo del proyecto
+> [!NOTE]
+> **Objetivo del proyecto**
 > Ensamblar un **sistema de serving (servicio de inferencia) en producción** end-to-end alrededor de **Qwen3-0.6B**: tomar el modelo (idealmente el fusionado del Proyecto 2), **cuantizarlo**, **desplegarlo en Azure ML** como *endpoint* gestionado, instrumentarlo con **observabilidad** (MLflow + OpenTelemetry), evaluarlo en continuo y operar despliegues seguros con estrategia **blue/green**. Este proyecto integra todos los anteriores y los capítulos 6, 10, 11 y 13.
 
 ## Objetivo y resultado esperado
@@ -51,7 +53,8 @@ Este proyecto es deliberadamente integrador: reutiliza el entendimiento del moto
 | Motor de serving | vLLM / TGI / contenedor propio |
 | Cuantización | GPTQ / AWQ / bitsandbytes |
 
-> [!info] Modelo gestionado vs autoalojado
+> [!NOTE]
+> **Modelo gestionado vs autoalojado**
 > Azure ML *Managed Online Endpoints* abstrae la infraestructura (autoescalado, *health probes*, *traffic split*). Tú aportas el contenedor de *scoring* y el modelo registrado. Es el camino recomendado para este proyecto frente a montar Kubernetes a mano. Ver [10 - Despliegue en Azure ML](../05-LLMOps/09-Despliegue-en-Azure-ML.md).
 
 ## Arquitectura
@@ -95,7 +98,8 @@ modelo.quantize(calibracion)
 modelo.save_quantized("qwen3_dominio_gptq4")
 ```
 
-> [!note] Compromiso calidad/recursos
+> [!NOTE]
+> **Compromiso calidad/recursos**
 > La cuantización a 4 bits suele reducir la huella de memoria ~4× frente a FP16 con una pérdida de calidad pequeña, **pero no nula**. Por eso el Milestone 5 vuelve a evaluar: nunca des por hecho que la versión cuantizada conserva la calidad. Fundamento en [06 - Cuantización y compresión](../05-LLMOps/06-Cuantizacion-y-compresion-avanzada.md).
 
 ### 2. Registrar el modelo y empaquetar el scoring
@@ -172,7 +176,8 @@ def run(raw_data):
     return resultado
 ```
 
-> [!tip] Tres familias de señales
+> [!TIP]
+> **Tres familias de señales**
 > Distingue **métricas** (latencia p50/p95/p99, *throughput*, tasa de error, utilización GPU), **trazas** (recorrido de una petición) y **logs de inferencia** (prompt + respuesta para auditoría y eval). Las tres se cubren en [11 - Observabilidad y monitorización](../05-LLMOps/10-Observabilidad-y-monitorizacion.md).
 
 ### 5. Evaluación continua
@@ -214,7 +219,8 @@ ml.online_endpoints.begin_create_or_update(
 # traffic={"blue": 100, "green": 0}
 ```
 
-> [!note] Por qué blue/green
+> [!NOTE]
+> **Por qué blue/green**
 > Mantener **dos versiones vivas** permite cambiar el reparto de tráfico de forma atómica y revertir en segundos sin reconstruir nada. El coste extra de tener `green` desplegado durante la validación es el precio del *downtime* cero.
 
 ## Criterios de aceptación
@@ -229,16 +235,20 @@ ml.online_endpoints.begin_create_or_update(
 
 ## Errores comunes
 
-> [!warning] Asumir que cuantizar no cambia la calidad
+> [!WARNING]
+> **Asumir que cuantizar no cambia la calidad**
 > 4 bits casi nunca es gratis. Si no reevalúas tras cuantizar, puedes desplegar una regresión silenciosa. El Milestone 5 existe precisamente para atraparla.
 
-> [!warning] Promocionar green sin canary
+> [!WARNING]
+> **Promocionar green sin canary**
 > Mandar el 100 % del tráfico a una versión no validada en producción es jugar a la ruleta. Siempre pasa por una fase *canary* con tráfico reducido y métricas observadas.
 
-> [!warning] Logs de inferencia sin gobernanza
+> [!WARNING]
+> **Logs de inferencia sin gobernanza**
 > Registrar *prompts* y respuestas es esencial para evaluar, pero pueden contener datos sensibles. Define retención, anonimización y control de acceso antes de activarlo.
 
-> [!warning] Cuota de GPU insuficiente
+> [!WARNING]
+> **Cuota de GPU insuficiente**
 > Los despliegues blue/green requieren capacidad para **dos** despliegues a la vez. Verifica la cuota de tu suscripción antes de lanzar el `green` o el `begin_create_or_update` fallará.
 
 ## Extensiones opcionales
@@ -249,7 +259,8 @@ ml.online_endpoints.begin_create_or_update(
 4. **Pipeline CI/CD** que automatice cuantizar → registrar → desplegar green → canary → promocionar, con *gates* de evaluación.
 5. **Detección de drift de entrada** comparando la distribución de *prompts* entrantes con la de entrenamiento.
 
-> [!success] Qué has aprendido
+> [!TIP]
+> **Qué has aprendido**
 > Has cerrado el ciclo completo de LLMOps: de un modelo entrenado a un servicio productivo cuantizado, desplegado en Azure ML, observado en métricas/trazas/logs, evaluado de forma continua y operado con despliegues seguros blue/green y *rollback*. Sabes que cada optimización (cuantizar) exige reevaluar, que la observabilidad es la condición para operar, y que el tráfico se mueve de forma gradual y reversible. Este es el final natural del recorrido que empezó construyendo el motor a mano.
 
 ## Enlaces relacionados

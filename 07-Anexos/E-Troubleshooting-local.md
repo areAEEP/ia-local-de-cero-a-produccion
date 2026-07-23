@@ -16,11 +16,12 @@ estado: completo
 
 
 
-> [!info] Linux, Windows y macOS
+> [!NOTE]
+> **Linux, Windows y macOS**
 > Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!goals]
+> [!TIP]
 > **Objetivos de este anexo:**
 > - Diagnosticar y resolver los errores más frecuentes en Linux, Windows y macOS.
 > - Cubrir seis categorías: memoria, Ollama, llama.cpp, MLX, Python/uv y formato de datos.
@@ -623,7 +624,7 @@ ls -lh ~/proyectos/whisper.cpp/models/
 
 ## Ejercicio práctico
 
-> [!exercise]
+> [!TIP]
 > **Diagnóstico guiado**
 >
 > Ejecuta el bloque de "diagnóstico en 60 segundos" de arriba y guarda la salida:
@@ -679,7 +680,8 @@ ls -lh ~/proyectos/whisper.cpp/models/
 
 ---
 
-> [!tip] Siguiente paso
+> [!TIP]
+> **Siguiente paso**
 > Para definiciones de términos técnicos, consulta [Glosario](B-Glosario.md).
 
 ---

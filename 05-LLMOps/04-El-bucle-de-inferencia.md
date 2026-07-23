@@ -26,11 +26,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] En este capítulo
+> [!NOTE]
+> **En este capítulo**
 > - Entender que los **tokens no son palabras** y por qué eso importa para el coste y el comportamiento.
 > - Distinguir las dos fases del bucle: **prefill** (compute-bound) y **decode** (memory-bound), y por qué tienen perfiles de rendimiento opuestos.
 > - Dominar las estrategias de **sampling**: *greedy*, *temperature*, *top-k* y *top-p* (*nucleus*).
@@ -50,7 +52,8 @@ Consecuencias prácticas que conviene tener grabadas:
 - Los **espacios** y la puntuación forman parte de los tokens (el espacio inicial suele ir pegado a la palabra: `" hola"` es distinto de `"hola"`).
 - Hay **tokens especiales** de control: inicio/fin de turno, fin de secuencia (*EOS*), etc.
 
-> [!warning] Por qué esto importa en LLMOps
+> [!WARNING]
+> **Por qué esto importa en LLMOps**
 > Facturación, límites de contexto, latencia y coste se miden en **tokens**, no en palabras ni caracteres. Una estimación "1 palabra = 1 token" puede equivocarse en un 30-50% según el idioma. La tokenización también explica errores clásicos: el modelo "no sabe" contar las letras de una palabra porque nunca ve letras, ve tokens. Para idiomas como el español o para código, conviene **medir** el ratio token/carácter real con el tokenizador del modelo, no asumirlo.
 
 ```python
@@ -92,7 +95,8 @@ flowchart LR
     STOP -->|sí| FIN[respuesta completa]
 ```
 
-> [!info] Por qué esto cambia el diseño del sistema
+> [!NOTE]
+> **Por qué esto cambia el diseño del sistema**
 > Como *decode* es memory-bound y procesa un token por paso, una GPU está **infrautilizada** sirviendo una sola petición en decode. La solución es el **batching**: procesar muchas secuencias a la vez para reaprovechar el ancho de banda (los pesos se leen una vez y sirven a todo el *batch*). Esto, y la convivencia de peticiones en *prefill* y *decode*, es el tema de [05 - Batching y scheduling](05-Batching-y-scheduling.md).
 
 ## Sampling
@@ -116,7 +120,8 @@ $$
 
 **Top-p (nucleus sampling):** en vez de un número fijo de tokens, se toma el **conjunto más pequeño** cuya probabilidad acumulada supera el umbral $p$ (p. ej. 0,9), y se muestrea dentro de él. Es **adaptativo**: si el modelo está muy seguro, el núcleo tiene pocos tokens; si está indeciso, tiene más. Suele dar el mejor equilibrio calidad/diversidad.
 
-> [!tip] Cómo se combinan en la práctica
+> [!TIP]
+> **Cómo se combinan en la práctica**
 > El orden habitual es: aplicar **temperature** → filtrar con **top-k** → filtrar con **top-p** → muestrear. Valores típicos de chat: `temperature ≈ 0.7`, `top_p ≈ 0.9`. Para tareas deterministas (extracción, clasificación, código con tests), usa `temperature = 0` (greedy). El muestreo afecta directamente a la reproducibilidad y a la evaluación: ver [13 - Evaluación y monitorización de calidad](12-Evaluacion-y-calidad-en-produccion.md).
 
 ```python
@@ -157,7 +162,8 @@ El bucle de *decode* no es infinito. Se detiene por alguna de estas condiciones:
 - **`max_tokens`**: tope duro de tokens de salida. Imprescindible como red de seguridad: evita bucles infinitos, controla coste y latencia, y protege el presupuesto de KV cache.
 - **Stop strings (*stop sequences*)**: cadenas de texto que, al aparecer, detienen la generación (p. ej. `"\nUsuario:"` para que el asistente no siga el turno del usuario, o `"```"` para cerrar un bloque de código). Operan a nivel de **texto detokenizado**, no de token, porque una cadena de parada puede repartirse entre varios tokens.
 
-> [!danger] Siempre fija un max_tokens
+> [!CAUTION]
+> **Siempre fija un max_tokens**
 > Sin `max_tokens`, una petición patológica (o un modelo que entra en bucle de repetición) puede generar indefinidamente, ocupando la KV cache y la GPU, degradando a todas las demás peticiones del *batch* y disparando el coste. En producción es un parámetro **obligatorio**, no opcional.
 
 ## Juntándolo todo: un motor de inferencia simple
@@ -237,16 +243,19 @@ class MotorInferenciaSimple:
 # print(motor.generar("Explica qué es la KV cache:", max_tokens=120))
 ```
 
-> [!example] Lectura guiada del bucle
+> [!TIP]
+> **Lectura guiada del bucle**
 > 1. **Tokeniza** el prompt → `ids`.
 > 2. **Prefill**: un único *forward* sobre todo el prompt llena la KV cache y da los logits del último token (compute-bound).
 > 3. **Decode**: en cada vuelta se muestrea un token, se comprueban las paradas y se hace un *forward* de **un solo** token reutilizando `past_key_values` (memory-bound).
 > 4. Sale por **EOS**, **stop string** o **max_tokens**.
 
-> [!warning] Lo que falta para producción
+> [!WARNING]
+> **Lo que falta para producción**
 > Este motor sirve **una** petición a la vez, lo que deja la GPU infrautilizada en *decode*. Le faltan: *batching* dinámico de muchas secuencias, *scheduling* de prefill/decode, gestión paginada de la KV cache (capítulo 3), *streaming* de tokens al cliente, manejo de errores y métricas. Esas piezas son justo lo que añaden vLLM, TGI o SGLang, y lo que veremos en [05 - Batching y scheduling](05-Batching-y-scheduling.md).
 
-> [!success] Puntos clave
+> [!TIP]
+> **Puntos clave**
 > - El modelo opera sobre **tokens** (BPE), no palabras: coste, contexto y facturación se miden en tokens y el ratio token/carácter varía con el idioma.
 > - El bucle tiene dos fases: **prefill** (todo el prompt en paralelo, *compute-bound*, fija el *TTFT*) y **decode** (un token por paso, *memory-bound*, fija el *TPOT*).
 > - El **sampling** transforma logits en tokens: *greedy* (determinista), *temperature* (afila/aplana), *top-k* (k fijo) y *top-p/nucleus* (adaptativo). Se combinan en ese orden.

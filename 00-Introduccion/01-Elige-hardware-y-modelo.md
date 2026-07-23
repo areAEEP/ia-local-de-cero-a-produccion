@@ -81,7 +81,8 @@ Los nombres concretos cambian rápido; los tamaños son el criterio estable. Est
 | 48-64 GB unificados o 24 GB VRAM | Qwen 3.5 27B, Gemma 3 27B u otros 20B-32B Q4 | 20B-32B | más calidad, contexto mayor, serving con poca concurrencia |
 | varias GPUs o 80 GB+ | modelos grandes y MoE | 70B+ o MoE | laboratorios de producción y paralelismo |
 
-> [!warning] "Cabe" no significa "va bien"
+> [!WARNING]
+> **"Cabe" no significa "va bien"**
 > Un modelo que deja el equipo haciendo swap o que genera a menos de un token por segundo no es una elección práctica. Baja un tamaño o reduce contexto.
 
 ## 4. Modelos con papeles distintos

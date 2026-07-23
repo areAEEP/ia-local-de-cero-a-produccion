@@ -24,11 +24,13 @@ created: 2026-06-30
 
 
 
-> [!info] Capítulo avanzado
+> [!NOTE]
+> **Capítulo avanzado**
 > Los conceptos se aplican a cualquier sistema. Los laboratorios de serving con CUDA se ejecutan mejor en WSL2/Linux o cloud; en Apple Silicon puedes practicar las ideas con llama.cpp, MLX o vLLM-Metal. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
-> [!abstract] Resumen
+> [!NOTE]
+> **Resumen**
 > Checklists accionables para llevar un servicio de inferencia de LLMs a producción y operarlo. Cubren cuatro fases: **pre-despliegue** (todo lo que debe estar verde antes de tocar producción), **go-live** (el corte controlado), **respuesta a incidentes** (cuando algo se rompe) y **rollback** (vuelta atrás segura). Marca cada casilla solo cuando exista evidencia, no por buena fe.
 
 ---
@@ -119,7 +121,8 @@ created: 2026-06-30
 - [ ] Registrar el rollback (qué, cuándo, por qué) y enlazarlo al incidente.
 - [ ] No re-desplegar la versión problemática hasta tener causa raíz y fix verificado.
 
-> [!warning] Regla de oro
+> [!WARNING]
+> **Regla de oro**
 > Mitigar primero, entender después. Un rollback rápido casi siempre es mejor que un diagnóstico heroico con el servicio caído.
 
 ---
