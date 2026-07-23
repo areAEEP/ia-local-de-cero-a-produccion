@@ -12,7 +12,7 @@ estado: completo
 # Fundamentos: qué es un LLM y qué necesita tu equipo
 
 <!-- CURSO_NAV_TOP -->
-[← Equivalencias entre Windows y macOS](../PLATAFORMAS-Y-COMANDOS.md) · [Índice](../README.md) · [Arquitectura transformer - intuición práctica →](02-Arquitectura-transformer.md)
+[← Equivalencias entre Linux, Windows y macOS](../PLATAFORMAS-Y-COMANDOS.md) · [Índice](../README.md) · [Arquitectura transformer - intuición práctica →](02-Arquitectura-transformer.md)
 <!-- /CURSO_NAV_TOP -->
 
 
@@ -325,7 +325,7 @@ Curso creado por [@are_agi](https://twitter.com/are_agi).
 ---
 
 <!-- CURSO_NAV_BOTTOM -->
-[← Equivalencias entre Windows y macOS](../PLATAFORMAS-Y-COMANDOS.md) · [Índice](../README.md) · [Arquitectura transformer - intuición práctica →](02-Arquitectura-transformer.md)
+[← Equivalencias entre Linux, Windows y macOS](../PLATAFORMAS-Y-COMANDOS.md) · [Índice](../README.md) · [Arquitectura transformer - intuición práctica →](02-Arquitectura-transformer.md)
 <!-- /CURSO_NAV_BOTTOM -->
 
 Curso creado por [@are_agi](https://twitter.com/are_agi).

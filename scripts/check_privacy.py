@@ -35,6 +35,7 @@ ALLOWED_VALUES = {
 ALLOWED_COMMIT_EMAIL = re.compile(
     r"(?i)^(?:\d+\+)?[A-Z0-9-]+@users\.noreply\.github\.com$"
 )
+GITHUB_GENERATED_COMMITTER_EMAIL = "noreply@github.com"
 
 
 def tracked_files() -> list[Path]:
@@ -53,7 +54,10 @@ def commit_metadata_findings() -> list[tuple[str, str]]:
             ("autor", author_email),
             ("committer", committer_email),
         ):
-            if not ALLOWED_COMMIT_EMAIL.fullmatch(email):
+            allowed = ALLOWED_COMMIT_EMAIL.fullmatch(email) or (
+                role == "committer" and email == GITHUB_GENERATED_COMMITTER_EMAIL
+            )
+            if not allowed:
                 findings.append(
                     (f"correo personal del {role}", f"commit {commit[:12]}")
                 )

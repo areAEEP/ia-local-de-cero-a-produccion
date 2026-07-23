@@ -8,6 +8,7 @@ tags:
   - llmops
   - windows
   - macos
+  - linux
 ---
 
 # IA local de cero a producción
@@ -18,10 +19,10 @@ tags:
 
 Este curso une y reorganiza los materiales de **Curso-IA-Local** y **Curso LLMOps Deep Dive**. Empieza sin dar por hecho que sabes de modelos, terminal o GPUs, y termina en temas de producción: KV cache, batching, fine-tuning, observabilidad, costes y despliegue.
 
-Puedes seguirlo con **Windows o macOS**. No necesitas un ordenador espectacular para empezar. Con 8 GB puedes hacer las primeras prácticas usando modelos pequeños; con 16-32 GB tendrás más margen; con una GPU NVIDIA o un Mac con bastante memoria unificada podrás abordar los laboratorios avanzados.
+Puedes seguirlo con **Linux, Windows o macOS**, tanto en un ordenador personal como en un servidor Linux. La mayor parte del curso usa Python, Ollama, llama.cpp y APIs HTTP, por lo que en Linux solo cambian unos pocos comandos de instalación y monitorización. Con 8 GB puedes hacer las primeras prácticas usando modelos pequeños; con 16-32 GB tendrás más margen; con una GPU NVIDIA, AMD compatible o un Mac con bastante memoria unificada podrás abordar los laboratorios avanzados.
 
 > [!important] Empieza aquí
-> Lee [Bienvenida y método](00-Introduccion/00-Bienvenida-y-metodo.md), elige tu ruta en [Hardware y modelos](00-Introduccion/01-Elige-hardware-y-modelo.md) y prepara el equipo con [Instalación en Windows y macOS](00-Introduccion/02-Instalacion-Windows-y-macOS.md).
+> Lee [Bienvenida y método](00-Introduccion/00-Bienvenida-y-metodo.md), elige tu ruta en [Hardware y modelos](00-Introduccion/01-Elige-hardware-y-modelo.md) y prepara el equipo con [Instalación en Linux, Windows y macOS](00-Introduccion/02-Instalacion-Windows-y-macOS.md).
 
 ## Qué vas a conseguir
 
@@ -29,7 +30,7 @@ Al terminar podrás:
 
 - distinguir modelo, formato, cuantización y runtime sin mezclar conceptos;
 - elegir un modelo que quepa de verdad en tu RAM o VRAM;
-- usar Ollama, LM Studio y llama.cpp en Windows y macOS;
+- usar Ollama, LM Studio y llama.cpp en Linux, Windows y macOS;
 - levantar una API compatible con OpenAI que funcione solo en tu equipo;
 - crear un RAG con tus documentos y un agente con herramientas;
 - evaluar calidad, velocidad y memoria antes de decir que algo "va mejor";
@@ -62,7 +63,7 @@ flowchart TD
 
 - [Bienvenida y método](00-Introduccion/00-Bienvenida-y-metodo.md)
 - [Elige hardware y modelo](00-Introduccion/01-Elige-hardware-y-modelo.md)
-- [Instalación en Windows y macOS](00-Introduccion/02-Instalacion-Windows-y-macOS.md)
+- [Instalación en Linux, Windows y macOS](00-Introduccion/02-Instalacion-Windows-y-macOS.md)
 - [Tu primera sesión local](00-Introduccion/03-Tu-primera-IA-local.md)
 - [Rutas y autoevaluación](00-Introduccion/04-Rutas-y-autoevaluacion.md)
 - [Equivalencias de comandos y plataformas](PLATAFORMAS-Y-COMANDOS.md)
@@ -140,8 +141,9 @@ En [Rutas y autoevaluación](00-Introduccion/04-Rutas-y-autoevaluacion.md) tiene
 
 ## Convenciones
 
-- Los comandos con pestañas **macOS** y **Windows PowerShell** son nativos.
-- Los laboratorios CUDA avanzados usan **WSL2/Linux**, aunque tu ordenador sea Windows.
+- Los bloques **Linux/macOS** usan una shell tipo bash o zsh; **Windows PowerShell** tiene equivalencias cuando la sintaxis cambia.
+- Los laboratorios CUDA avanzados se ejecutan de forma nativa en **Linux**; en Windows, la ruta recomendada es WSL2.
+- En un servidor Linux sin escritorio, usa Ollama o llama.cpp por terminal y accede a sus APIs mediante un túnel SSH; LM Studio requiere interfaz gráfica.
 - `localhost` significa "este ordenador". Mientras no cambies el host o abras el firewall, el servicio no está publicado en Internet.
 - Los tamaños de modelo son orientativos. El contexto, la cuantización, el runtime y otras aplicaciones abiertas cambian la memoria real.
 - Las recomendaciones de modelos están fechadas. Comprueba siempre la ficha y la licencia antes de usar uno en un producto.

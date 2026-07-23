@@ -17,8 +17,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> Ollama y el ejemplo Python funcionan en los dos sistemas. Los apartados MLX/Metal son la ruta Apple; en Windows usa el backend compatible con tu GPU. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> Ollama y el ejemplo Python funcionan en los tres sistemas. Los apartados MLX/Metal son la ruta Apple; en Linux o Windows usa el backend compatible con tu GPU. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!goals]
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     print(ask_image(imagen, pregunta))
 ```
 
-Ejecutar en macOS o Windows PowerShell:
+Ejecutar en Linux/macOS o Windows PowerShell:
 
 ```text
 uv run python multivision.py
@@ -204,7 +204,7 @@ uv run python multivision.py
 
 ### Alternativa avanzada: llama.cpp
 
-El soporte multimodal y los nombres de los binarios evolucionan deprisa. Empieza por la [documentación actual de llama.cpp](https://github.com/ggml-org/llama.cpp) y descarga juntos el GGUF y su projector `mmproj`. La idea es la misma en los dos sistemas; cambia la ruta al ejecutable y el backend:
+El soporte multimodal y los nombres de los binarios evolucionan deprisa. Empieza por la [documentación actual de llama.cpp](https://github.com/ggml-org/llama.cpp) y descarga juntos el GGUF y su projector `mmproj`. La idea es la misma en los tres sistemas; cambia la ruta al ejecutable y el backend:
 
 ```bash
 # Clonar y compilar con Metal

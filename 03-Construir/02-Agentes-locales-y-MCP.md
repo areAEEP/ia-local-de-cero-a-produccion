@@ -17,8 +17,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> El código Python y la API de Ollama son comunes. En este capítulo las tools quedan limitadas a una carpeta de laboratorio: no damos al modelo una shell abierta ni acceso a todo el disco.
+> [!info] Linux, Windows y macOS
+> El código Python y la API de Ollama son comunes. En este capítulo las tools quedan limitadas a una carpeta de laboratorio: no damos al modelo una shell abierta ni acceso a todo el disco, tampoco en un servidor Linux.
 
 > [!goals] Objetivos de aprendizaje
 > - Entender por qué un LLM aislado no puede actuar sobre el mundo y qué aporta un agente.

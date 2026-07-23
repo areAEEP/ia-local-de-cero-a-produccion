@@ -8,7 +8,7 @@ actualizado: 2026-07-23
 # Elige una ruta que encaje en tu equipo
 
 <!-- CURSO_NAV_TOP -->
-[← Bienvenida: cómo aprender IA local sin profesor](00-Bienvenida-y-metodo.md) · [Índice](../README.md) · [Prepara Windows o macOS →](02-Instalacion-Windows-y-macOS.md)
+[← Bienvenida: cómo aprender IA local sin profesor](00-Bienvenida-y-metodo.md) · [Índice](../README.md) · [Prepara Linux, Windows o macOS →](02-Instalacion-Windows-y-macOS.md)
 <!-- /CURSO_NAV_TOP -->
 
 
@@ -38,6 +38,20 @@ nvidia-smi
 ```
 
 Si `nvidia-smi` no existe, puede que no tengas NVIDIA o que falte el driver. En Windows con GPU dedicada hay dos presupuestos: **VRAM** de la tarjeta y **RAM** del sistema. Si parte del modelo cae a CPU porque no cabe en VRAM, funcionará, pero normalmente irá más lento.
+
+### Linux
+
+```bash
+cat /etc/os-release
+uname -m
+lscpu | sed -n '1,12p'
+free -h
+df -h /
+lspci | grep -Ei 'vga|3d|display'
+nvidia-smi
+```
+
+`nvidia-smi` solo aplica a NVIDIA. En un servidor Linux, comprueba además que la GPU esté visible dentro del contenedor o de la sesión remota antes de atribuir un fallo al runtime. La regla sigue siendo la misma: separa RAM del sistema y VRAM, y reserva margen para el sistema, los buffers y otras cargas.
 
 ## 2. Regla de memoria que no promete milagros
 
@@ -91,7 +105,7 @@ La [biblioteca oficial de Ollama](https://ollama.com/search) muestra los tags qu
    ├─ ¿prefieres interfaz gráfica? → LM Studio
    ├─ ¿quieres controlar GGUF y flags? → llama.cpp
    ├─ ¿quieres fine-tuning en Mac? → MLX
-   └─ ¿quieres CUDA/serving avanzado? → WSL2/Linux + PEFT/vLLM
+   └─ ¿quieres CUDA/serving avanzado? → Linux nativo o WSL2 + PEFT/vLLM
 ```
 
 ## 6. Licencia, model card y datos
@@ -131,7 +145,7 @@ Curso creado por [@are_agi](https://twitter.com/are_agi).
 ---
 
 <!-- CURSO_NAV_BOTTOM -->
-[← Bienvenida: cómo aprender IA local sin profesor](00-Bienvenida-y-metodo.md) · [Índice](../README.md) · [Prepara Windows o macOS →](02-Instalacion-Windows-y-macOS.md)
+[← Bienvenida: cómo aprender IA local sin profesor](00-Bienvenida-y-metodo.md) · [Índice](../README.md) · [Prepara Linux, Windows o macOS →](02-Instalacion-Windows-y-macOS.md)
 <!-- /CURSO_NAV_BOTTOM -->
 
 Curso creado por [@are_agi](https://twitter.com/are_agi).

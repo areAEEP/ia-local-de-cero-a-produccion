@@ -18,8 +18,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> Las partes de Ollama, llama.cpp y Python sirven en ambos sistemas. MLX y Metal son exclusivos de Apple Silicon; en Windows usa CUDA, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!goals] Objetivos de aprendizaje

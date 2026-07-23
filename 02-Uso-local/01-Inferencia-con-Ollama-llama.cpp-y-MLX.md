@@ -18,8 +18,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> Las partes de Ollama, llama.cpp y Python sirven en ambos sistemas. MLX y Metal son exclusivos de Apple Silicon; en Windows usa CUDA, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!goals] Objetivos de aprendizaje
@@ -71,7 +71,7 @@ Solo así sabes si la diferencia viene del motor o del modelo elegido. Esta disc
 
 ## 1. Tres rutas de inferencia
 
-En ambos sistemas conviene conocer estas herramientas:
+En los tres sistemas conviene conocer estas herramientas:
 
 - **Ollama**: la más simple para uso diario y API local.
 - **llama.cpp**: control fino sobre GGUF, backend de GPU, batch y servidor.
@@ -103,7 +103,7 @@ Si 4B va lento, baja a 0,8B–2B. Si va holgado, compara después con 9B u otra 
 
 ## 3. Modelfile de Ollama
 
-Crea un `Modelfile` con tu editor. Su contenido es idéntico en ambos sistemas:
+Crea un `Modelfile` con tu editor. Su contenido es idéntico en los tres sistemas:
 
 ```dockerfile
 FROM qwen3.5:4b
@@ -129,7 +129,7 @@ ollama run qwen-tecnico "Dame un comando para ver la memoria."
 
 ## 4. llama.cpp directo
 
-Puedes dejar que llama.cpp descargue un GGUF de ejemplo directamente desde Hugging Face. Este comando funciona en ambos sistemas si instalaste el paquete:
+Puedes dejar que llama.cpp descargue un GGUF de ejemplo directamente desde Hugging Face. Este comando funciona en Linux, Windows y macOS si instalaste el paquete:
 
 ```text
 llama-cli -hf ggml-org/gemma-3-1b-it-GGUF -p "Dame tres reglas para elegir un modelo local." -n 120 -c 4096

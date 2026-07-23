@@ -7,7 +7,7 @@ modulo: "00.04"
 # Elige tu itinerario y comprueba el aprendizaje
 
 <!-- CURSO_NAV_TOP -->
-[← Tu primera sesión de IA local](03-Tu-primera-IA-local.md) · [Índice](../README.md) · [Equivalencias entre Windows y macOS →](../PLATAFORMAS-Y-COMANDOS.md)
+[← Tu primera sesión de IA local](03-Tu-primera-IA-local.md) · [Índice](../README.md) · [Equivalencias entre Linux, Windows y macOS →](../PLATAFORMAS-Y-COMANDOS.md)
 <!-- /CURSO_NAV_TOP -->
 
 
@@ -108,6 +108,9 @@ Incluye objetivos de TTFT, ITL, throughput, memoria, calidad y coste.
 | Windows sin GPU dedicada | Ollama/LM Studio CPU, modelos 1B-4B, RAG | entrenamiento y modelos grandes |
 | Windows + NVIDIA 8-16 GB | Ollama/llama.cpp CUDA; WSL2 para PEFT | multi-GPU y contexto extremo |
 | Windows + NVIDIA 24 GB+ | QLoRA, vLLM en WSL2, serving | asumir que producción = abrir un puerto |
+| Linux sin GPU dedicada | Ollama/llama.cpp CPU, modelos 1B-4B, RAG | entrenamiento y modelos grandes |
+| Linux + NVIDIA o AMD compatible | Ollama, llama.cpp, PEFT/QLoRA y serving nativo | instalar drivers sin comprobar compatibilidad |
+| Servidor Linux | APIs locales, vLLM, contenedores, observabilidad | exponer puertos sin autenticación ni firewall |
 | Mac 8 GB | modelos 0,8B-2B, contexto corto | LoRA de 7B y multitarea pesada |
 | Mac 16-32 GB | Ollama, llama.cpp Metal, MLX, 4B-14B Q4 | llenar toda la memoria unificada |
 | Mac 64 GB+ | modelos 20B-32B Q4, LoRA y serving local | confundir memoria con throughput de datacenter |
@@ -148,7 +151,7 @@ Curso creado por [@are_agi](https://twitter.com/are_agi).
 ---
 
 <!-- CURSO_NAV_BOTTOM -->
-[← Tu primera sesión de IA local](03-Tu-primera-IA-local.md) · [Índice](../README.md) · [Equivalencias entre Windows y macOS →](../PLATAFORMAS-Y-COMANDOS.md)
+[← Tu primera sesión de IA local](03-Tu-primera-IA-local.md) · [Índice](../README.md) · [Equivalencias entre Linux, Windows y macOS →](../PLATAFORMAS-Y-COMANDOS.md)
 <!-- /CURSO_NAV_BOTTOM -->
 
 Curso creado por [@are_agi](https://twitter.com/are_agi).

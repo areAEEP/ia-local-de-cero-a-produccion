@@ -24,8 +24,8 @@ created: 2026-06-30
 
 
 
-> [!info] Ruta NVIDIA / cloud
-> Los ejemplos con CUDA están pensados para Windows mediante WSL2, Linux o una GPU cloud. En Mac, usa el itinerario MLX enlazado en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Ruta Linux / NVIDIA / cloud
+> Linux nativo es la ruta más directa para estos ejemplos CUDA. En Windows, usa WSL2; en Mac, sigue el itinerario MLX enlazado en [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!abstract] En este capítulo

@@ -17,8 +17,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> whisper.cpp funciona en ambos sistemas y ofrece CPU, Metal, Vulkan, NVIDIA, AMD y OpenVINO según la compilación. `mlx-whisper` es solo para Apple Silicon.
+> [!info] Linux, Windows y macOS
+> whisper.cpp funciona en los tres sistemas y ofrece CPU, Metal, Vulkan, NVIDIA, AMD y OpenVINO según la compilación. `mlx-whisper` es solo para Apple Silicon.
 
 
 > [!goals]
@@ -26,7 +26,7 @@ estado: completo
 > - Entender qué es STT (Speech-to-Text) y por qué Whisper cambió el panorama.
 > - Conocer la arquitectura encoder-decoder de Whisper y su ventanas de 30 s.
 > - Diferenciar entre transcripción batch y streaming.
-> - Compilar y ejecutar whisper.cpp en macOS o Windows.
+> - Compilar y ejecutar whisper.cpp en Linux, macOS o Windows.
 > - Instalar y usar mlx-whisper como alternativa nativa Apple Silicon.
 > - Aplicar STT a casos reales: reuniones, subtítulos y dictado en vivo.
 
@@ -143,7 +143,7 @@ Whisper procesa el audio en **chunks de 30 s**. Internamente:
 
 ## Comandos: whisper.cpp
 
-### Compilación en macOS
+### Compilación en Linux o macOS
 
 ```bash
 cd ~/proyectos
@@ -154,7 +154,7 @@ cmake --build build --config Release -j
 ./build/bin/whisper-cli --help
 ```
 
-Metal se habilita en la ruta habitual de Apple Silicon. Si quieres una compilación específica, revisa las opciones actuales del repositorio.
+En Apple Silicon, Metal se habilita en la ruta habitual. En Linux, esta compilación usa CPU; para CUDA, ROCm/HIP o Vulkan, revisa las opciones actuales del repositorio y comprueba primero que el driver funciona.
 
 ### Compilación en Windows PowerShell
 

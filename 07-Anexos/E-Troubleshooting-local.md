@@ -16,13 +16,13 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> Las partes de Ollama, llama.cpp y Python sirven en ambos sistemas. MLX y Metal son exclusivos de Apple Silicon; en Windows usa CUDA, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!goals]
 > **Objetivos de este anexo:**
-> - Diagnosticar y resolver los errores más frecuentes en Windows y macOS.
+> - Diagnosticar y resolver los errores más frecuentes en Linux, Windows y macOS.
 > - Cubrir seis categorías: memoria, Ollama, llama.cpp, MLX, Python/uv y formato de datos.
 > - Para cada error: síntoma, causa, solución y comando de verificación.
 > - Mínimo 20 errores documentados con soluciones concretas y ejecutables.
@@ -69,6 +69,21 @@ ollama --version
 ollama ps
 curl.exe http://127.0.0.1:11434/api/tags
 ```
+
+### Linux
+
+```bash
+cat /etc/os-release
+uname -m
+free -h
+lspci | grep -Ei 'vga|3d|display'
+nvidia-smi
+systemctl status ollama --no-pager
+ollama ps
+curl http://127.0.0.1:11434/api/tags
+```
+
+Si es un servidor remoto, ejecuta estas comprobaciones dentro de su sesión SSH, no en el ordenador desde el que te conectas.
 
 Que `nvidia-smi` falle no implica que Ollama esté roto: quizá no tienes NVIDIA. Mira el nombre de la GPU y usa el backend compatible.
 
@@ -167,9 +182,14 @@ Normalmente significa que la app de Ollama ya está ejecutándose. No lances otr
 - **Causa:** El servicio de Ollama no está corriendo.
 - **Solución:**
   ```bash
-  # Iniciar el servicio
+  # macOS con Homebrew
   brew services start ollama
-  # O lanzar manualmente en segundo plano
+
+  # Linux con systemd
+  sudo systemctl start ollama
+  systemctl status ollama --no-pager
+
+  # Cualquier sistema Unix: lanzar manualmente
   ollama serve &
   ```
 - **Verificación:**
@@ -199,6 +219,8 @@ Normalmente significa que la app de Ollama ya está ejecutándose. No lances otr
   ```bash
   # Ver qué proceso ocupa el puerto
   lsof -i :11434
+  # Alternativa habitual en Linux
+  ss -ltnp | grep 11434
   # Matar el proceso
   kill -9 <PID>
   # O usar otro puerto

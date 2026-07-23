@@ -17,8 +17,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> El pipeline Python y Ollama funcionan igual. Solo cambia la activación del entorno y algunos comandos de terminal; consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> El pipeline Python y Ollama funcionan igual en los tres sistemas. Solo cambia la activación del entorno y algún comando de terminal; consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 > [!goals] Objetivos de aprendizaje
 > - Entender por qué RAG es la primera herramienta que debes probar antes de pensar en fine-tuning.
@@ -196,7 +196,7 @@ v = embed("la memoria RAM es volátil")
 print(len(v), v[:5])  # 768 [0.012, -0.044, ...]
 ```
 
-**Recomendación:** empieza con `nomic-embed-text` vía Ollama. Si necesitas multilingüe o más calidad, prueba `bge-m3`. Para experimentar en Python puro sin servidor, `sentence-transformers` funciona en los dos sistemas.
+**Recomendación:** empieza con `nomic-embed-text` vía Ollama. Si necesitas multilingüe o más calidad, prueba `bge-m3`. Para experimentar en Python puro sin servidor, `sentence-transformers` funciona en Linux, Windows y macOS.
 
 ---
 
@@ -378,7 +378,7 @@ def load_documents(docs_dir: str) -> list[dict]:
              "text": "Python es un lenguaje interpretado, de tipado dinámico y multiparadigma. "
                      "Soporta programación funcional, orientada a objetos y procedural."},
             {"id": "demo3", "source": "demo",
-             "text": "Ollama permite ejecutar LLMs localmente en Windows y macOS. "
+             "text": "Ollama permite ejecutar LLMs localmente en Linux, Windows y macOS. "
                      "Expone una API REST en el puerto 11434."},
         ]
     return docs

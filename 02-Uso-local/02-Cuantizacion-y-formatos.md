@@ -17,8 +17,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> Las partes de Ollama, llama.cpp y Python sirven en ambos sistemas. MLX y Metal son exclusivos de Apple Silicon; en Windows usa CUDA, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> Ollama, llama.cpp y Python sirven en los tres sistemas. MLX y Metal son exclusivos de Apple Silicon; en Linux usa CUDA, ROCm/HIP, Vulkan o CPU según tu equipo. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!goals] Objetivos de aprendizaje
@@ -233,6 +233,14 @@ Crea una tabla propia, porque cada Mac y cada versión cambian.
 ```
 
 En macOS, `/usr/bin/time -l` muestra memoria máxima residente.
+
+En Linux, cambia `-l` por `-v`:
+
+```bash
+/usr/bin/time -v ~/ia-local/llama.cpp/build/bin/llama-cli \
+  -m ~/ia-local/models/modelo-Q4_K_M.gguf \
+  -p "Resume este concepto." -n 200 -ngl 99 -c 4096
+```
 
 Plantilla:
 

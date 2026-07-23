@@ -7,7 +7,7 @@ modulo: "00.03"
 # Tu primera sesión de IA local
 
 <!-- CURSO_NAV_TOP -->
-[← Prepara Windows o macOS](02-Instalacion-Windows-y-macOS.md) · [Índice](../README.md) · [Elige tu itinerario y comprueba el aprendizaje →](04-Rutas-y-autoevaluacion.md)
+[← Prepara Linux, Windows o macOS](02-Instalacion-Windows-y-macOS.md) · [Índice](../README.md) · [Elige tu itinerario y comprueba el aprendizaje →](04-Rutas-y-autoevaluacion.md)
 <!-- /CURSO_NAV_TOP -->
 
 
@@ -124,7 +124,7 @@ print("Tokens de salida:", data.get("eval_count"))
 print("Duración de generación (ns):", data.get("eval_duration"))
 ```
 
-Ejecuta en ambos sistemas:
+Ejecuta en los tres sistemas:
 
 ```text
 uv run python primera_llamada.py
@@ -193,7 +193,7 @@ Curso creado por [@are_agi](https://twitter.com/are_agi).
 ---
 
 <!-- CURSO_NAV_BOTTOM -->
-[← Prepara Windows o macOS](02-Instalacion-Windows-y-macOS.md) · [Índice](../README.md) · [Elige tu itinerario y comprueba el aprendizaje →](04-Rutas-y-autoevaluacion.md)
+[← Prepara Linux, Windows o macOS](02-Instalacion-Windows-y-macOS.md) · [Índice](../README.md) · [Elige tu itinerario y comprueba el aprendizaje →](04-Rutas-y-autoevaluacion.md)
 <!-- /CURSO_NAV_BOTTOM -->
 
 Curso creado por [@are_agi](https://twitter.com/are_agi).

@@ -17,8 +17,8 @@ estado: completo
 
 
 
-> [!info] Windows y macOS
-> La fórmula de la KV cache no cambia. En Apple Silicon todo compite por memoria unificada; en Windows con GPU dedicada debes vigilar VRAM y RAM por separado. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
+> [!info] Linux, Windows y macOS
+> La fórmula de la KV cache no cambia. En Apple Silicon todo compite por memoria unificada; en Linux o Windows con GPU dedicada debes vigilar VRAM y RAM por separado. Consulta [Plataformas y comandos](../PLATAFORMAS-Y-COMANDOS.md).
 
 
 > [!goals] Objetivos de aprendizaje
