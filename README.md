@@ -15,7 +15,7 @@ tags:
 
 > Un curso gratuito y autodidacta para aprender a ejecutar, entender, adaptar y servir modelos de IA en tu propio ordenador.
 
-**Autor:** [@are_agi](https://twitter.com/are_agi)
+**Autor:** Antonio Rodríguez Estrada ([@are_agi](https://twitter.com/are_agi))
 
 Este curso une y reorganiza los materiales de **Curso-IA-Local** y **Curso LLMOps Deep Dive**. Empieza sin dar por hecho que sabes de modelos, terminal o GPUs, y termina en temas de producción: KV cache, batching, fine-tuning, observabilidad, costes y despliegue.
 
@@ -170,4 +170,4 @@ El curso está escrito en español de España y pensado para estudiar sin profes
 
 Si detectas un comando que ha cambiado o quieres mejorar una explicación, consulta [Cómo contribuir](CONTRIBUTING.md).
 
-Creado por **[@are_agi](https://twitter.com/are_agi)**.
+Creado por **Antonio Rodríguez Estrada** ([@are_agi](https://twitter.com/are_agi)).
