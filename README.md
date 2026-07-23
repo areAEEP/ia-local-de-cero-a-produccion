@@ -17,7 +17,7 @@ tags:
 
 **Autor:** Antonio Rodríguez Estrada ([@are_agi](https://twitter.com/are_agi))
 
-Este curso une y reorganiza los materiales de **Curso-IA-Local** y **Curso LLMOps Deep Dive**. Empieza sin dar por hecho que sabes de modelos, terminal o GPUs, y termina en temas de producción: KV cache, batching, fine-tuning, observabilidad, costes y despliegue.
+El curso empieza sin dar por hecho que sabes de modelos, terminal o GPUs, y termina en temas de producción: KV cache, batching, fine-tuning, observabilidad, costes y despliegue.
 
 Puedes seguirlo con **Linux, Windows o macOS**, tanto en un ordenador personal como en un servidor Linux. La mayor parte del curso usa Python, Ollama, llama.cpp y APIs HTTP, por lo que en Linux solo cambian unos pocos comandos de instalación y monitorización. Con 8 GB puedes hacer las primeras prácticas usando modelos pequeños; con 16-32 GB tendrás más margen; con una GPU NVIDIA, AMD compatible o un Mac con bastante memoria unificada podrás abordar los laboratorios avanzados.
 
